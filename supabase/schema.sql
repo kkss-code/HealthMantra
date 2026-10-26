@@ -1,0 +1,117 @@
+-- HealthMantra Supabase schema.
+-- Run this in the Supabase SQL editor (Project > SQL Editor > New query) once
+-- you've created a project. Also disable "Confirm email" under
+-- Authentication > Providers > Email for this demo, so sign-up logs the user
+-- in immediately (no inbox to click through).
+
+create table if not exists profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  name text not null,
+  email text not null,
+  role text not null check (role in ('patient', 'doctor', 'admin_patient', 'admin_doctor')),
+  gender text,
+  birthdate date,
+  avatar_emoji text,
+  specialty text
+);
+
+create table if not exists diary_entries (
+  id uuid primary key default gen_random_uuid(),
+  patient_id uuid not null references profiles(id) on delete cascade,
+  patient_name text not null,
+  condition_id text not null,
+  condition_name text not null,
+  answers jsonb not null default '{}',
+  findings jsonb,
+  status text not null default 'pending' check (status in ('pending', 'accepted', 'declined')),
+  doctor_note jsonb,
+  created_at timestamptz not null default now()
+);
+
+-- Patient-facing content, owned by Patient Admin (admin_patient). Patients
+-- and doctors only ever read these.
+create table if not exists conditions (
+  id text primary key default gen_random_uuid()::text,
+  name text not null,
+  icon text not null,
+  color text not null,
+  tagline text not null,
+  description text not null,
+  sort_order int not null default 0
+);
+
+create table if not exists question_steps (
+  id text primary key default gen_random_uuid()::text,
+  condition_id text not null references conditions(id) on delete cascade,
+  sort_order int not null default 0,
+  question text not null,
+  helper_text text,
+  type text not null check (type in ('text', 'textarea', 'number', 'select', 'yesno', 'date', 'photo', 'repeatable')),
+  options jsonb,
+  max_length int,
+  placeholder text,
+  repeatable_fields jsonb,
+  repeatable_item_label text
+);
+
+-- Bookable doctor directory, owned by Doctor Admin (admin_doctor). This is a
+-- separate listing from `profiles` (role = 'doctor'), which are actual
+-- login accounts that review the Diary.
+create table if not exists doctors (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  specialty text not null,
+  price numeric not null,
+  avatar_emoji text
+);
+
+insert into doctors (name, specialty, price, avatar_emoji) values
+  ('Dr. Ayushi Rao', 'Headache', 500, '👩‍⚕️'),
+  ('Dr. Ram Singh', 'Blood Pressure', 400, '🧑‍⚕️'),
+  ('Dr. Leo D''Souza', 'Diabetes', 450, '👨‍⚕️'),
+  ('Dr. Emma Watson', 'Dermatology', 350, '👩‍⚕️')
+on conflict do nothing;
+
+alter table profiles enable row level security;
+alter table diary_entries enable row level security;
+alter table conditions enable row level security;
+alter table question_steps enable row level security;
+alter table doctors enable row level security;
+
+create or replace function current_role_is(target_role text) returns boolean as $$
+  select exists (select 1 from profiles p where p.id = auth.uid() and p.role = target_role);
+$$ language sql security definer stable;
+
+-- profiles: a user can read/update only their own row; doctors and both
+-- admin roles can read every profile (review queues + account management).
+create policy "profiles_select_own" on profiles for select using (auth.uid() = id);
+create policy "profiles_select_staff" on profiles for select using (
+  current_role_is('doctor') or current_role_is('admin_patient') or current_role_is('admin_doctor')
+);
+create policy "profiles_insert_self" on profiles for insert with check (auth.uid() = id);
+create policy "profiles_update_own" on profiles for update using (auth.uid() = id);
+
+-- diary_entries: patients manage their own; doctors and both admin roles can
+-- read/update all of them (review queue + admin data view).
+create policy "diary_select_own_or_staff" on diary_entries for select using (
+  auth.uid() = patient_id or current_role_is('doctor') or current_role_is('admin_patient') or current_role_is('admin_doctor')
+);
+create policy "diary_insert_own" on diary_entries for insert with check (auth.uid() = patient_id);
+create policy "diary_update_doctor" on diary_entries for update using (current_role_is('doctor'));
+
+-- conditions / question_steps: readable by any signed-in user; writable only
+-- by Patient Admin.
+create policy "conditions_select_all" on conditions for select using (auth.uid() is not null);
+create policy "conditions_write_admin_patient" on conditions for all using (current_role_is('admin_patient')) with check (current_role_is('admin_patient'));
+create policy "question_steps_select_all" on question_steps for select using (auth.uid() is not null);
+create policy "question_steps_write_admin_patient" on question_steps for all using (current_role_is('admin_patient')) with check (current_role_is('admin_patient'));
+
+-- doctors: readable by any signed-in user; writable only by Doctor Admin.
+create policy "doctors_select_all" on doctors for select using (auth.uid() is not null);
+create policy "doctors_write_admin_doctor" on doctors for all using (current_role_is('admin_doctor')) with check (current_role_is('admin_doctor'));
+
+-- Storage: create two public buckets from the dashboard (Storage > New bucket):
+--   photos      (public)  -- condition photos attached during intake
+--   signatures  (public)  -- doctor signature images
+-- Public buckets are simplest for this demo; tighten with signed URLs + RLS
+-- storage policies before shipping to real patients.

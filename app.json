@@ -3,6 +3,7 @@
     "name": "HealthMantra",
     "slug": "HealthMantra",
     "version": "1.0.0",
+    "scheme": "healthmantra",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -20,6 +21,21 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-sharing",
+      "@react-native-community/datetimepicker",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "HealthMantra needs access to your photos so you can attach images to your health notes.",
+          "cameraPermission": "HealthMantra needs access to your camera so you can photograph the area you're asking your doctor about."
+        }
+      ],
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
     }
   }
 }

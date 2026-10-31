@@ -50,7 +50,9 @@ export function NotificationsScreen() {
           <Card key={e.id}>
             <View style={styles.row}>
               <Text style={styles.title}>
-                {e.doctorNote?.doctorName ?? 'Your doctor'} reviewed your {e.conditionName} note
+                {e.status === 'declined'
+                  ? `${e.doctorName ?? 'A doctor'} declined your ${e.conditionName} note`
+                  : `${e.doctorNote?.doctorName ?? 'Your doctor'} reviewed your ${e.conditionName} note`}
               </Text>
               <StatusPill status={e.status} />
             </View>

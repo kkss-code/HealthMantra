@@ -33,6 +33,8 @@ create table if not exists diary_entries (
   findings jsonb,
   status text not null default 'pending' check (status in ('pending', 'accepted', 'declined')),
   doctor_note jsonb,
+  doctor_id uuid references profiles(id) on delete set null, -- set once the patient picks a doctor
+  doctor_name text,
   created_at timestamptz not null default now()
 );
 
@@ -85,13 +87,20 @@ create policy "profiles_select_doctors_public" on profiles for select using (
 create policy "profiles_insert_self" on profiles for insert with check (auth.uid() = id);
 create policy "profiles_update_own" on profiles for update using (auth.uid() = id);
 
--- diary_entries: patients manage their own; doctors and admins can
--- read/update all of them (review queue + admin data view).
-create policy "diary_select_own_or_staff" on diary_entries for select using (
-  auth.uid() = patient_id or current_role_is('doctor') or current_role_is('admin')
+-- diary_entries: patients manage their own; a doctor can only see/update
+-- entries the patient has assigned to them (doctor_id = auth.uid()); admins
+-- see everything (admin data view).
+create policy "diary_select_own" on diary_entries for select using (auth.uid() = patient_id);
+create policy "diary_select_assigned_doctor" on diary_entries for select using (
+  current_role_is('doctor') and doctor_id = auth.uid()
 );
+create policy "diary_select_admin" on diary_entries for select using (current_role_is('admin'));
 create policy "diary_insert_own" on diary_entries for insert with check (auth.uid() = patient_id);
-create policy "diary_update_doctor" on diary_entries for update using (current_role_is('doctor'));
+-- Patients update their own row to assign/reassign a doctor.
+create policy "diary_update_own" on diary_entries for update using (auth.uid() = patient_id) with check (auth.uid() = patient_id);
+create policy "diary_update_doctor" on diary_entries for update using (
+  current_role_is('doctor') and doctor_id = auth.uid()
+);
 
 -- conditions / question_steps: readable by any signed-in user; writable
 -- only by Admin.

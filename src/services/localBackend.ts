@@ -148,6 +148,11 @@ export class LocalBackend implements Backend {
     return all.filter((e) => e.patientId === patientId);
   }
 
+  async listDiaryEntriesForDoctor(doctorId: string): Promise<DiaryEntry[]> {
+    const all = await getItem<DiaryEntry[]>(KEYS.diary, []);
+    return all.filter((e) => e.doctorId === doctorId);
+  }
+
   async listAllDiaryEntries(): Promise<DiaryEntry[]> {
     return getItem<DiaryEntry[]>(KEYS.diary, []);
   }
@@ -157,6 +162,14 @@ export class LocalBackend implements Backend {
     const idx = all.findIndex((e) => e.id === entryId);
     if (idx === -1) return;
     all[idx] = { ...all[idx], status };
+    await setItem(KEYS.diary, all);
+  }
+
+  async assignDoctor(entryId: string, doctorId: string, doctorName: string): Promise<void> {
+    const all = await getItem<DiaryEntry[]>(KEYS.diary, []);
+    const idx = all.findIndex((e) => e.id === entryId);
+    if (idx === -1) return;
+    all[idx] = { ...all[idx], doctorId, doctorName };
     await setItem(KEYS.diary, all);
   }
 

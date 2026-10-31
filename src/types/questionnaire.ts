@@ -71,4 +71,6 @@ export interface DiaryEntry {
   findings?: Finding[];
   status: DiaryStatus;
   doctorNote?: DoctorNote;
+  doctorId?: string; // set once the patient picks a doctor from "Find a Doctor"
+  doctorName?: string;
 }

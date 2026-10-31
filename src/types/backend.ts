@@ -15,8 +15,10 @@ export interface Backend {
   createDiaryEntry(entry: Pick<DiaryEntry, 'patientId' | 'patientName' | 'conditionId' | 'conditionName' | 'answers' | 'findings'>): Promise<DiaryEntry>;
   getDiaryEntry(entryId: string): Promise<DiaryEntry | null>;
   listDiaryEntriesForPatient(patientId: string): Promise<DiaryEntry[]>;
+  listDiaryEntriesForDoctor(doctorId: string): Promise<DiaryEntry[]>;
   listAllDiaryEntries(): Promise<DiaryEntry[]>;
   updateDiaryEntryStatus(entryId: string, status: DiaryStatus): Promise<void>;
+  assignDoctor(entryId: string, doctorId: string, doctorName: string): Promise<void>;
   addDoctorNote(entryId: string, note: DoctorNote): Promise<void>;
 
   // Patient-facing content: Patient Admin owns these, patients just read them.

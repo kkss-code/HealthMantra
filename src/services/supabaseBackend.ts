@@ -35,6 +35,8 @@ function mapDiaryRow(row: any): DiaryEntry {
     findings: row.findings ?? undefined,
     status: row.status,
     doctorNote: row.doctor_note ?? undefined,
+    doctorId: row.doctor_id ?? undefined,
+    doctorName: row.doctor_name ?? undefined,
   };
 }
 
@@ -152,6 +154,13 @@ export class SupabaseBackend implements Backend {
     return (data ?? []).map(mapDiaryRow);
   }
 
+  async listDiaryEntriesForDoctor(doctorId: string): Promise<DiaryEntry[]> {
+    const client = requireClient();
+    const { data, error } = await client.from('diary_entries').select('*').eq('doctor_id', doctorId).order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map(mapDiaryRow);
+  }
+
   async listAllDiaryEntries(): Promise<DiaryEntry[]> {
     const client = requireClient();
     const { data, error } = await client.from('diary_entries').select('*').order('created_at', { ascending: false });
@@ -162,6 +171,12 @@ export class SupabaseBackend implements Backend {
   async updateDiaryEntryStatus(entryId: string, status: DiaryStatus): Promise<void> {
     const client = requireClient();
     const { error } = await client.from('diary_entries').update({ status }).eq('id', entryId);
+    if (error) throw error;
+  }
+
+  async assignDoctor(entryId: string, doctorId: string, doctorName: string): Promise<void> {
+    const client = requireClient();
+    const { error } = await client.from('diary_entries').update({ doctor_id: doctorId, doctor_name: doctorName }).eq('id', entryId);
     if (error) throw error;
   }
 

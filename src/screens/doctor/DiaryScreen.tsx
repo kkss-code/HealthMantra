@@ -6,15 +6,18 @@ import { Card } from '../../components/Card';
 import { StatusPill } from '../../components/StatusPill';
 import { PillButton } from '../../components/PillButton';
 import { backend } from '../../services/backend';
+import { useAuthStore } from '../../state/authStore';
 import { DiaryEntry } from '../../types/questionnaire';
 import { colors, spacing, typography } from '../../theme/theme';
 
 export function DiaryScreen() {
+  const user = useAuthStore((s) => s.user);
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
 
   const load = useCallback(() => {
-    backend.listAllDiaryEntries().then(setEntries);
-  }, []);
+    if (!user) return;
+    backend.listDiaryEntriesForDoctor(user.id).then(setEntries);
+  }, [user]);
 
   useFocusEffect(load);
 
@@ -29,7 +32,7 @@ export function DiaryScreen() {
       <Text style={typography.bodyMuted}>Today</Text>
 
       {entries.length === 0 ? (
-        <Text style={typography.bodyMuted}>No patient entries yet.</Text>
+        <Text style={typography.bodyMuted}>No patients have sent you a note yet.</Text>
       ) : (
         entries.map((entry) => (
           <Card key={entry.id}>

@@ -137,6 +137,8 @@ export function ReportScreen() {
               <Text style={typography.body}>{entry.doctorNote.note}</Text>
               {entry.doctorNote.signatureUri ? <Image source={{ uri: entry.doctorNote.signatureUri }} style={styles.signature} /> : null}
             </View>
+          ) : entry.doctorName ? (
+            <Text style={typography.bodyMuted}>Sent to {entry.doctorName} — awaiting review.</Text>
           ) : (
             <Text style={typography.bodyMuted}>Awaiting doctor review.</Text>
           )}
@@ -145,11 +147,11 @@ export function ReportScreen() {
 
       <View style={styles.footer}>
         <PillButton label="Share" variant="secondary" icon="📤" onPress={handleShare} loading={sharing} />
-        {user?.role === 'patient' ? (
+        {user?.role === 'patient' && !entry.doctorNote ? (
           <PillButton
-            label="Find a Doctor"
+            label={entry.doctorId ? 'Change Doctor' : 'Find a Doctor'}
             icon="→"
-            onPress={() => router.push({ pathname: '/patient/doctor-list', params: { conditionName: entry.conditionName } })}
+            onPress={() => router.push({ pathname: '/patient/doctor-list', params: { conditionName: entry.conditionName, entryId: entry.id } })}
           />
         ) : null}
         {user?.role === 'doctor' && !entry.doctorNote ? (

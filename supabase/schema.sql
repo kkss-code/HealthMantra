@@ -3,6 +3,13 @@
 -- you've created a project. Also disable "Confirm email" under
 -- Authentication > Providers > Email for this demo, so sign-up logs the user
 -- in immediately (no inbox to click through).
+--
+-- This schema seeds the `doctors` table but NOT `conditions` /
+-- `question_steps` (that content is sizeable and generated, not literal
+-- SQL). After running this file, also run:
+--   node supabase/generate-seed-content.mjs > /tmp/seed-content.sql
+-- and run the output in the SQL editor too, or the patient Home screen will
+-- have no conditions to show.
 
 create table if not exists profiles (
   id uuid primary key references auth.users(id) on delete cascade,

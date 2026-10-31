@@ -5,14 +5,18 @@ import { ScreenContainer } from '../../components/ScreenContainer';
 import { Card } from '../../components/Card';
 import { Logo } from '../../components/Logo';
 import { Role } from '../../types/domain';
+import { isWebPlatform } from '../../utils/access';
 import { colors, spacing, typography } from '../../theme/theme';
 
-const ROLES: { role: Role; label: string; description: string; icon: string }[] = [
+const ALL_ROLES: { role: Role; label: string; description: string; icon: string }[] = [
   { role: 'patient', label: 'Patient', description: 'Log a condition, get a report', icon: '🙂' },
   { role: 'doctor', label: 'Doctor', description: 'Review patient notes', icon: '🧑‍⚕️' },
   { role: 'admin_patient', label: 'Patient Admin', description: 'Manage conditions & questions', icon: '🗂️' },
   { role: 'admin_doctor', label: 'Doctor Admin', description: 'Manage the doctor directory', icon: '🗂️' },
 ];
+
+// Admin roles are web-only; the native app only ever offers Patient/Doctor.
+const ROLES = isWebPlatform ? ALL_ROLES : ALL_ROLES.filter((r) => r.role === 'patient' || r.role === 'doctor');
 
 export function RoleSelectScreen() {
   return (

@@ -10,9 +10,11 @@ import { RadioList } from '../../components/RadioList';
 import { useAuthStore } from '../../state/authStore';
 import { ROLE_LABELS, Role } from '../../types/domain';
 import { ROLE_HOME_ROUTE } from '../../utils/roleHome';
+import { isWebPlatform } from '../../utils/access';
 import { colors, spacing, typography } from '../../theme/theme';
 
-const ROLE_OPTIONS: Role[] = ['patient', 'doctor', 'admin_patient', 'admin_doctor'];
+// Admin roles are web-only; the native app only ever offers Patient/Doctor.
+const ROLE_OPTIONS: Role[] = isWebPlatform ? ['patient', 'doctor', 'admin_patient', 'admin_doctor'] : ['patient', 'doctor'];
 
 export function RegisterScreen() {
   const params = useLocalSearchParams<{ intendedRole?: Role }>();

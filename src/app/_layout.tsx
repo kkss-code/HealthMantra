@@ -12,14 +12,21 @@ export default function RootLayout() {
   const initializing = useAuthStore((s) => s.initializing);
   const user = useAuthStore((s) => s.user);
   const loadContent = useContentStore((s) => s.load);
-  const contentLoaded = useContentStore((s) => s.loaded);
 
   useEffect(() => {
     initialize();
-    loadContent();
-  }, [initialize, loadContent]);
+  }, [initialize]);
 
-  if (initializing || !contentLoaded) {
+  // Conditions/questions are protected by RLS requiring an authenticated
+  // session, so this must (re-)run whenever `user` goes from null to signed
+  // in — not just once at cold start, which can race ahead of auth on a
+  // fresh install with no cached session (the Home screen would otherwise
+  // be stuck showing zero conditions forever).
+  useEffect(() => {
+    if (user) loadContent();
+  }, [user, loadContent]);
+
+  if (initializing) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}>
         <ActivityIndicator size="large" color={colors.primary} />

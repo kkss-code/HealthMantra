@@ -31,6 +31,15 @@ export function DiaryScreen() {
       <Text style={typography.h1}>Diary</Text>
       <Text style={typography.bodyMuted}>Today</Text>
 
+      {user && !user.specialty ? (
+        <Pressable onPress={() => router.push('/doctor/profile')}>
+          <Card style={styles.banner}>
+            <Text style={styles.bannerTitle}>Set your specialty & price</Text>
+            <Text style={typography.bodyMuted}>Patients can&apos;t find you in &ldquo;Find a Doctor&rdquo; until your profile is complete. Tap to finish it.</Text>
+          </Card>
+        </Pressable>
+      ) : null}
+
       {entries.length === 0 ? (
         <Text style={typography.bodyMuted}>No patients have sent you a note yet.</Text>
       ) : (
@@ -66,4 +75,6 @@ const styles = StyleSheet.create({
   avatar: { fontSize: 28 },
   name: { fontWeight: '700', color: colors.text },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm, marginTop: spacing.sm },
+  banner: { gap: 4, backgroundColor: colors.primaryLight, borderColor: colors.primary },
+  bannerTitle: { fontWeight: '700', color: colors.text },
 });

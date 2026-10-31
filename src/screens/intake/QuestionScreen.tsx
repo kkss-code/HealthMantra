@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -10,6 +10,7 @@ import { PillButton } from '../../components/PillButton';
 import { TextField } from '../../components/TextField';
 import { RadioList, YesNo } from '../../components/RadioList';
 import { RepeatableGroup } from '../../components/RepeatableGroup';
+import { ActionSheetModal } from '../../components/ActionSheetModal';
 import { useIntakeStore } from '../../state/intakeStore';
 import { useAuthStore } from '../../state/authStore';
 import { backend } from '../../services/backend';
@@ -28,33 +29,26 @@ export function QuestionScreen() {
   const reset = useIntakeStore((s) => s.reset);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showPhotoSheet, setShowPhotoSheet] = useState(false);
 
   if (!schema) return null;
   const step = schema.steps[stepIndex];
   const value = answers[step.id];
 
-  async function pickPhoto() {
-    Alert.alert('Attach photograph', undefined, [
-      {
-        text: 'Camera',
-        onPress: async () => {
-          const perm = await ImagePicker.requestCameraPermissionsAsync();
-          if (!perm.granted) return;
-          const result = await ImagePicker.launchCameraAsync({ quality: 0.7 });
-          if (!result.canceled) setAnswer(step.id, result.assets[0].uri);
-        },
-      },
-      {
-        text: 'Photos',
-        onPress: async () => {
-          const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-          if (!perm.granted) return;
-          const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.7 });
-          if (!result.canceled) setAnswer(step.id, result.assets[0].uri);
-        },
-      },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
+  async function fromCamera() {
+    setShowPhotoSheet(false);
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) return;
+    const result = await ImagePicker.launchCameraAsync({ quality: 0.7 });
+    if (!result.canceled) setAnswer(step.id, result.assets[0].uri);
+  }
+
+  async function fromLibrary() {
+    setShowPhotoSheet(false);
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) return;
+    const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.7 });
+    if (!result.canceled) setAnswer(step.id, result.assets[0].uri);
   }
 
   async function handleNext() {
@@ -143,10 +137,10 @@ export function QuestionScreen() {
 
         {step.type === 'photo' ? (
           <View style={{ gap: spacing.sm }}>
-            <Pressable onPress={pickPhoto}>
+            <Pressable onPress={() => setShowPhotoSheet(true)}>
               <Text style={styles.uploadLink}>Upload your document</Text>
             </Pressable>
-            <Pressable style={styles.photoBox} onPress={pickPhoto}>
+            <Pressable style={styles.photoBox} onPress={() => setShowPhotoSheet(true)}>
               {value ? (
                 <Image source={{ uri: value as string }} style={styles.photoPreview} />
               ) : (
@@ -169,6 +163,16 @@ export function QuestionScreen() {
       <View style={styles.footer}>
         {submitting ? <ActivityIndicator color={colors.primary} /> : <PillButton label="Next" icon="→" onPress={handleNext} />}
       </View>
+
+      <ActionSheetModal
+        visible={showPhotoSheet}
+        title="Attach photograph"
+        actions={[
+          { label: 'Camera', onPress: fromCamera },
+          { label: 'Photos', onPress: fromLibrary },
+        ]}
+        onCancel={() => setShowPhotoSheet(false)}
+      />
     </ScreenContainer>
   );
 }

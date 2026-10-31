@@ -5,6 +5,7 @@ import { ScreenContainer } from '../../components/ScreenContainer';
 import { TopBar } from '../../components/TopBar';
 import { Card } from '../../components/Card';
 import { PillButton } from '../../components/PillButton';
+import { ActionSheetModal } from '../../components/ActionSheetModal';
 import { backend } from '../../services/backend';
 import { useContentStore } from '../../state/contentStore';
 import { StoredQuestionStep } from '../../types/content';
@@ -24,6 +25,7 @@ const TYPE_LABELS: Record<string, string> = {
 export function QuestionsListScreen() {
   const { conditionId, conditionName } = useLocalSearchParams<{ conditionId: string; conditionName: string }>();
   const [steps, setSteps] = useState<StoredQuestionStep[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const reloadContent = useContentStore((s) => s.load);
 
   const load = useCallback(() => {
@@ -42,7 +44,10 @@ export function QuestionsListScreen() {
     await reloadContent();
   }
 
-  async function handleDelete(stepId: string) {
+  async function confirmDelete() {
+    if (!deletingId) return;
+    const stepId = deletingId;
+    setDeletingId(null);
     await backend.deleteQuestionStep(stepId);
     await reloadContent();
     load();
@@ -72,12 +77,19 @@ export function QuestionsListScreen() {
               <Text style={styles.question} numberOfLines={2}>{step.question}</Text>
               <Text style={styles.typeBadge}>{TYPE_LABELS[step.type] ?? step.type}</Text>
             </Pressable>
-            <Pressable onPress={() => handleDelete(step.id)} hitSlop={8}>
+            <Pressable onPress={() => setDeletingId(step.id)} hitSlop={8}>
               <Text style={{ fontSize: 16 }}>🗑️</Text>
             </Pressable>
           </Card>
         ))}
       </ScreenContainer>
+
+      <ActionSheetModal
+        visible={!!deletingId}
+        title="Delete this question?"
+        actions={[{ label: 'Delete', variant: 'danger', onPress: confirmDelete }]}
+        onCancel={() => setDeletingId(null)}
+      />
     </ScreenContainer>
   );
 }

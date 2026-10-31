@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Alert, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ScreenContainer } from '../../components/ScreenContainer';
 import { TopBar } from '../../components/TopBar';
 import { TextField } from '../../components/TextField';
 import { PillButton } from '../../components/PillButton';
 import { ChipSelect } from '../../components/ChipSelect';
+import { ActionSheetModal } from '../../components/ActionSheetModal';
 import { useContentStore } from '../../state/contentStore';
 import { backend } from '../../services/backend';
 import { spacing, typography } from '../../theme/theme';
@@ -31,6 +32,7 @@ export function ConditionEditScreen() {
   const [tagline, setTagline] = useState(existing?.tagline ?? '');
   const [description, setDescription] = useState(existing?.description ?? '');
   const [saving, setSaving] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   async function handleSave() {
     setSaving(true);
@@ -51,20 +53,12 @@ export function ConditionEditScreen() {
     }
   }
 
-  function handleDelete() {
+  async function confirmDelete() {
     if (!conditionId) return;
-    Alert.alert('Delete this condition?', 'Its questions and this listing will be removed. Existing patient reports are kept.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          await backend.deleteCondition(conditionId);
-          await reloadContent();
-          router.back();
-        },
-      },
-    ]);
+    setConfirmingDelete(false);
+    await backend.deleteCondition(conditionId);
+    await reloadContent();
+    router.back();
   }
 
   return (
@@ -95,8 +89,16 @@ export function ConditionEditScreen() {
         </View>
 
         <PillButton label="Save" onPress={handleSave} loading={saving} disabled={!name} fullWidth />
-        {existing ? <PillButton label="Delete Condition" variant="danger" onPress={handleDelete} fullWidth /> : null}
+        {existing ? <PillButton label="Delete Condition" variant="danger" onPress={() => setConfirmingDelete(true)} fullWidth /> : null}
       </ScreenContainer>
+
+      <ActionSheetModal
+        visible={confirmingDelete}
+        title="Delete this condition?"
+        message="Its questions and this listing will be removed. Existing patient reports are kept."
+        actions={[{ label: 'Delete', variant: 'danger', onPress: confirmDelete }]}
+        onCancel={() => setConfirmingDelete(false)}
+      />
     </ScreenContainer>
   );
 }

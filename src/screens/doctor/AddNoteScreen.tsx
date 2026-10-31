@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ScreenContainer } from '../../components/ScreenContainer';
 import { TopBar } from '../../components/TopBar';
@@ -33,7 +33,6 @@ export function AddNoteScreen() {
         signatureUri: signature,
         createdAt: new Date().toISOString(),
       });
-      Alert.alert('Notes successfully submitted');
       router.back();
     } finally {
       setSubmitting(false);

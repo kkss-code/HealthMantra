@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ScreenContainer } from '../../components/ScreenContainer';
 import { TopBar } from '../../components/TopBar';
@@ -7,6 +7,7 @@ import { TextField } from '../../components/TextField';
 import { PillButton } from '../../components/PillButton';
 import { ChipSelect } from '../../components/ChipSelect';
 import { Card } from '../../components/Card';
+import { ActionSheetModal } from '../../components/ActionSheetModal';
 import { backend } from '../../services/backend';
 import { useContentStore } from '../../state/contentStore';
 import { FieldType, RepeatableFieldDef } from '../../types/questionnaire';
@@ -48,6 +49,7 @@ export function QuestionEditScreen() {
   const [repeatableItemLabel, setRepeatableItemLabel] = useState(existing?.repeatableItemLabel ?? 'Item');
   const [repeatableFields, setRepeatableFields] = useState<RepeatableFieldDef[]>(existing?.repeatableFields ?? []);
   const [saving, setSaving] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   function addRepeatableField() {
     setRepeatableFields((fields) => [...fields, { key: `field_${fields.length + 1}`, label: '', type: 'text' }]);
@@ -85,20 +87,12 @@ export function QuestionEditScreen() {
     }
   }
 
-  function handleDelete() {
+  async function confirmDelete() {
     if (!stepId) return;
-    Alert.alert('Delete this question?', undefined, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          await backend.deleteQuestionStep(stepId);
-          await reloadContent();
-          router.back();
-        },
-      },
-    ]);
+    setConfirmingDelete(false);
+    await backend.deleteQuestionStep(stepId);
+    await reloadContent();
+    router.back();
   }
 
   return (
@@ -170,8 +164,15 @@ export function QuestionEditScreen() {
         ) : null}
 
         <PillButton label="Save" onPress={handleSave} loading={saving} disabled={!question} fullWidth />
-        {existing ? <PillButton label="Delete Question" variant="danger" onPress={handleDelete} fullWidth /> : null}
+        {existing ? <PillButton label="Delete Question" variant="danger" onPress={() => setConfirmingDelete(true)} fullWidth /> : null}
       </ScreenContainer>
+
+      <ActionSheetModal
+        visible={confirmingDelete}
+        title="Delete this question?"
+        actions={[{ label: 'Delete', variant: 'danger', onPress: confirmDelete }]}
+        onCancel={() => setConfirmingDelete(false)}
+      />
     </ScreenContainer>
   );
 }

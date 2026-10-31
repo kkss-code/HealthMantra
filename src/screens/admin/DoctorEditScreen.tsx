@@ -32,7 +32,7 @@ export function DoctorEditScreen() {
     if (!doctorId) return;
     setSaving(true);
     try {
-      await backend.updateProfile(doctorId, { specialty, price: Number(price) || 0 });
+      await backend.updateProfile(doctorId, { specialty, price: price ? Number(price) : undefined });
       router.back();
     } finally {
       setSaving(false);

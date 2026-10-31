@@ -104,9 +104,16 @@ export class SupabaseBackend implements Backend {
 
   async updateProfile(userId: string, patch: Partial<AppUser>): Promise<AppUser> {
     const client = requireClient();
+    // The profile-edit form starts optional text fields as '' until typed.
+    // Postgres' `date` column rejects '' outright (only a real date or null
+    // is valid), and storing '' for text columns would defeat `?? 'Not set'`
+    // fallbacks elsewhere, so normalize blank-but-provided fields to null.
+    const birthdate = patch.birthdate === '' ? null : patch.birthdate;
+    const gender = patch.gender === '' ? null : patch.gender;
+    const specialty = patch.specialty === '' ? null : patch.specialty;
     const { data, error } = await client
       .from('profiles')
-      .update({ name: patch.name, gender: patch.gender, birthdate: patch.birthdate, avatar_emoji: patch.avatarEmoji, specialty: patch.specialty, price: patch.price })
+      .update({ name: patch.name, gender, birthdate, avatar_emoji: patch.avatarEmoji, specialty, price: patch.price })
       .eq('id', userId)
       .select()
       .single();

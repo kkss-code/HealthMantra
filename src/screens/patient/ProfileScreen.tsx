@@ -21,12 +21,20 @@ export function ProfileScreen() {
   const [name, setName] = useState(user?.name ?? '');
   const [gender, setGender] = useState(user?.gender ?? '');
   const [birthdate, setBirthdate] = useState(user?.birthdate ?? '');
+  const [specialty, setSpecialty] = useState(user?.specialty ?? '');
+  const [price, setPrice] = useState(user?.price != null ? String(user.price) : '');
   const [saving, setSaving] = useState(false);
+  const isDoctor = user?.role === 'doctor';
 
   async function handleSave() {
     setSaving(true);
     try {
-      await updateProfile({ name, gender, birthdate });
+      await updateProfile({
+        name,
+        gender,
+        birthdate,
+        ...(isDoctor ? { specialty, price: price ? Number(price) : undefined } : {}),
+      });
       setEditing(false);
     } finally {
       setSaving(false);
@@ -49,7 +57,7 @@ export function ProfileScreen() {
           <Text style={{ fontSize: 40 }}>{user.avatarEmoji ?? '🙂'}</Text>
         </View>
         <Text style={styles.name}>{user.name}</Text>
-        {user.role === 'doctor' ? <Text style={typography.bodyMuted}>{user.specialty ?? 'Doctor'}</Text> : null}
+        {isDoctor ? <Text style={typography.bodyMuted}>{user.specialty ?? 'Specialty not set'}</Text> : null}
       </View>
 
       {editing ? (
@@ -57,6 +65,12 @@ export function ProfileScreen() {
           <TextField value={name} onChangeText={setName} placeholder="Name" />
           <TextField value={gender} onChangeText={setGender} placeholder="Gender" />
           <TextField value={birthdate} onChangeText={setBirthdate} placeholder="Birthdate (YYYY-MM-DD)" />
+          {isDoctor ? (
+            <>
+              <TextField value={specialty} onChangeText={setSpecialty} placeholder="Specialty, e.g. Headache" />
+              <TextField value={price} onChangeText={setPrice} keyboardType="numeric" placeholder="Consult price, e.g. 400" />
+            </>
+          ) : null}
           <PillButton label="Save" onPress={handleSave} loading={saving} fullWidth />
         </View>
       ) : (
@@ -73,6 +87,12 @@ export function ProfileScreen() {
             <Text style={typography.label}>Birthdate</Text>
             <Text style={typography.body}>{user.birthdate ?? 'Not set'}</Text>
           </Card>
+          {isDoctor ? (
+            <Card style={styles.infoRow}>
+              <Text style={typography.label}>Consult price</Text>
+              <Text style={typography.body}>{user.price != null ? `₹${user.price}` : 'Not set'}</Text>
+            </Card>
+          ) : null}
         </View>
       )}
 

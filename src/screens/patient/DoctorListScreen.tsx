@@ -5,15 +5,15 @@ import { ScreenContainer } from '../../components/ScreenContainer';
 import { Card } from '../../components/Card';
 import { TopBar } from '../../components/TopBar';
 import { backend } from '../../services/backend';
-import { Doctor } from '../../types/domain';
+import { AppUser } from '../../types/domain';
 import { colors, spacing, typography } from '../../theme/theme';
 
 export function DoctorListScreen() {
   const { conditionName } = useLocalSearchParams<{ conditionName?: string }>();
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [doctors, setDoctors] = useState<AppUser[]>([]);
 
   useEffect(() => {
-    backend.listDoctors().then(setDoctors);
+    backend.listAccountsByRole('doctor').then(setDoctors);
   }, []);
 
   const recommended = conditionName ? doctors.filter((d) => d.specialty === conditionName) : doctors.slice(0, 1);
@@ -37,15 +37,15 @@ export function DoctorListScreen() {
   );
 }
 
-function DoctorCard({ doctor }: { doctor: Doctor }) {
+function DoctorCard({ doctor }: { doctor: AppUser }) {
   return (
     <Card style={styles.card}>
-      <Text style={styles.avatar}>{doctor.avatarEmoji}</Text>
+      <Text style={styles.avatar}>{doctor.avatarEmoji ?? '🧑‍⚕️'}</Text>
       <View style={{ flex: 1 }}>
         <Text style={styles.name}>{doctor.name}</Text>
-        <Text style={typography.bodyMuted}>{doctor.specialty}</Text>
+        <Text style={typography.bodyMuted}>{doctor.specialty ?? 'General'}</Text>
       </View>
-      <Text style={styles.price}>₹{doctor.price}</Text>
+      {doctor.price != null ? <Text style={styles.price}>₹{doctor.price}</Text> : null}
     </Card>
   );
 }

@@ -1,4 +1,4 @@
-import { AppUser, Doctor, Role } from '../types/domain';
+import { AppUser, Role } from '../types/domain';
 import { DiaryEntry, DiaryStatus, DoctorNote } from '../types/questionnaire';
 import { StoredCondition, StoredQuestionStep } from '../types/content';
 import { Backend } from '../types/backend';
@@ -19,6 +19,7 @@ function mapProfile(row: any): AppUser {
     birthdate: row.birthdate ?? undefined,
     avatarEmoji: row.avatar_emoji ?? undefined,
     specialty: row.specialty ?? undefined,
+    price: row.price ?? undefined,
   };
 }
 
@@ -55,10 +56,6 @@ function mapQuestionStepRow(row: any): StoredQuestionStep {
     repeatableFields: row.repeatable_fields ?? undefined,
     repeatableItemLabel: row.repeatable_item_label ?? undefined,
   };
-}
-
-function mapDoctorRow(row: any): Doctor {
-  return { id: row.id, name: row.name, specialty: row.specialty, price: row.price, avatarEmoji: row.avatar_emoji };
 }
 
 export class SupabaseBackend implements Backend {
@@ -107,7 +104,7 @@ export class SupabaseBackend implements Backend {
     const client = requireClient();
     const { data, error } = await client
       .from('profiles')
-      .update({ name: patch.name, gender: patch.gender, birthdate: patch.birthdate, avatar_emoji: patch.avatarEmoji, specialty: patch.specialty })
+      .update({ name: patch.name, gender: patch.gender, birthdate: patch.birthdate, avatar_emoji: patch.avatarEmoji, specialty: patch.specialty, price: patch.price })
       .eq('id', userId)
       .select()
       .single();
@@ -240,27 +237,6 @@ export class SupabaseBackend implements Backend {
   async reorderQuestionSteps(conditionId: string, orderedStepIds: string[]): Promise<void> {
     const client = requireClient();
     await Promise.all(orderedStepIds.map((id, index) => client.from('question_steps').update({ sort_order: index }).eq('id', id).eq('condition_id', conditionId)));
-  }
-
-  async listDoctors(): Promise<Doctor[]> {
-    const client = requireClient();
-    const { data, error } = await client.from('doctors').select('*');
-    if (error) throw error;
-    return (data ?? []).map(mapDoctorRow);
-  }
-
-  async upsertDoctor(doctor: Doctor): Promise<Doctor> {
-    const client = requireClient();
-    const row = { id: doctor.id || undefined, name: doctor.name, specialty: doctor.specialty, price: doctor.price, avatar_emoji: doctor.avatarEmoji };
-    const { data, error } = await client.from('doctors').upsert(row).select().single();
-    if (error) throw error;
-    return mapDoctorRow(data);
-  }
-
-  async deleteDoctor(doctorId: string): Promise<void> {
-    const client = requireClient();
-    const { error } = await client.from('doctors').delete().eq('id', doctorId);
-    if (error) throw error;
   }
 
   async uploadAsset({ localUri, bucket, fileName }: { localUri: string; bucket: 'photos' | 'signatures'; fileName: string }): Promise<string> {

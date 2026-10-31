@@ -1,4 +1,4 @@
-import { AppUser, Doctor, Role } from './domain';
+import { AppUser, Role } from './domain';
 import { DiaryEntry, DiaryStatus, DoctorNote } from './questionnaire';
 import { StoredCondition, StoredQuestionStep } from './content';
 
@@ -27,11 +27,6 @@ export interface Backend {
   upsertQuestionStep(step: StoredQuestionStep): Promise<StoredQuestionStep>;
   deleteQuestionStep(stepId: string): Promise<void>;
   reorderQuestionSteps(conditionId: string, orderedStepIds: string[]): Promise<void>;
-
-  // Doctor directory (bookable listing): Doctor Admin owns these.
-  listDoctors(): Promise<Doctor[]>;
-  upsertDoctor(doctor: Doctor): Promise<Doctor>;
-  deleteDoctor(doctorId: string): Promise<void>;
 
   // Stores a local file (photo or signature) and returns a URI the rest of
   // the app can render/share. Local mode just echoes the device URI back;

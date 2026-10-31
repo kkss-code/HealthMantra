@@ -1,4 +1,4 @@
-import { AppUser, Doctor, Role } from '../types/domain';
+import { AppUser, Role } from '../types/domain';
 import { DiaryEntry, DiaryStatus, DoctorNote } from '../types/questionnaire';
 import { StoredCondition, StoredQuestionStep } from '../types/content';
 import { Backend } from '../types/backend';
@@ -15,15 +15,14 @@ const KEYS = {
   diary: 'diary',
   conditions: 'conditions',
   questionSteps: 'questionSteps',
-  doctors: 'doctors',
   seeded: 'seeded',
 };
 
-const SEED_DOCTORS: Doctor[] = [
-  { id: 'doc-1', name: 'Dr. Ayushi Rao', specialty: 'Headache', price: 500, avatarEmoji: '👩‍⚕️' },
-  { id: 'doc-2', name: 'Dr. Ram Singh', specialty: 'Blood Pressure', price: 400, avatarEmoji: '🧑‍⚕️' },
-  { id: 'doc-3', name: 'Dr. Leo D’Souza', specialty: 'Diabetes', price: 450, avatarEmoji: '👨‍⚕️' },
-  { id: 'doc-4', name: 'Dr. Emma Watson', specialty: 'Dermatology', price: 350, avatarEmoji: '👩‍⚕️' },
+const SEED_DOCTOR_ACCOUNTS: Omit<StoredAccount, 'id'>[] = [
+  { name: 'Dr. Ayushi Rao', email: 'dr.ayushi@healthmantra.test', password: 'DoctorTest123', role: 'doctor', specialty: 'Headache', price: 500, avatarEmoji: '👩‍⚕️' },
+  { name: 'Dr. Ram Singh', email: 'dr.ram@healthmantra.test', password: 'DoctorTest123', role: 'doctor', specialty: 'Blood Pressure', price: 400, avatarEmoji: '🧑‍⚕️' },
+  { name: 'Dr. Leo D’Souza', email: 'dr.leo@healthmantra.test', password: 'DoctorTest123', role: 'doctor', specialty: 'Diabetes', price: 450, avatarEmoji: '👨‍⚕️' },
+  { name: 'Dr. Emma Watson', email: 'dr.emma@healthmantra.test', password: 'DoctorTest123', role: 'doctor', specialty: 'Dermatology', price: 350, avatarEmoji: '👩‍⚕️' },
 ];
 
 const SEED_ADMINS: Omit<StoredAccount, 'id'>[] = [
@@ -54,12 +53,10 @@ async function ensureSeeded(): Promise<void> {
   );
   await setItem(KEYS.questionSteps, steps);
 
-  await setItem(KEYS.doctors, SEED_DOCTORS);
-
   const accounts = await getAccounts();
-  for (const admin of SEED_ADMINS) {
-    if (!accounts.some((a) => a.email === admin.email)) {
-      accounts.push({ ...admin, id: makeId('user') });
+  for (const seed of [...SEED_ADMINS, ...SEED_DOCTOR_ACCOUNTS]) {
+    if (!accounts.some((a) => a.email === seed.email)) {
+      accounts.push({ ...seed, id: makeId('user') });
     }
   }
   await setItem(KEYS.accounts, accounts);
@@ -220,26 +217,6 @@ export class LocalBackend implements Backend {
     const orderIndex = new Map(orderedStepIds.map((id, index) => [id, index]));
     const updated = all.map((s) => (s.conditionId === conditionId && orderIndex.has(s.id) ? { ...s, order: orderIndex.get(s.id)! } : s));
     await setItem(KEYS.questionSteps, updated);
-  }
-
-  async listDoctors(): Promise<Doctor[]> {
-    await this.ready;
-    return getItem<Doctor[]>(KEYS.doctors, []);
-  }
-
-  async upsertDoctor(doctor: Doctor): Promise<Doctor> {
-    const all = await getItem<Doctor[]>(KEYS.doctors, []);
-    const idx = all.findIndex((d) => d.id === doctor.id);
-    const record = doctor.id ? doctor : { ...doctor, id: makeId('doctor') };
-    if (idx === -1) all.push(record);
-    else all[idx] = record;
-    await setItem(KEYS.doctors, all);
-    return record;
-  }
-
-  async deleteDoctor(doctorId: string): Promise<void> {
-    const all = await getItem<Doctor[]>(KEYS.doctors, []);
-    await setItem(KEYS.doctors, all.filter((d) => d.id !== doctorId));
   }
 
   async uploadAsset({ localUri }: { localUri: string; bucket: 'photos' | 'signatures'; fileName: string }): Promise<string> {

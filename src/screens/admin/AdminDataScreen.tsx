@@ -67,8 +67,11 @@ export function AdminDataScreen() {
               <Text style={{ fontSize: 24 }}>{d.avatarEmoji ?? '🧑‍⚕️'}</Text>
               <View style={{ flex: 1 }}>
                 <Text style={styles.name}>{d.name}</Text>
-                <Text style={typography.bodyMuted}>{d.email}</Text>
+                <Text style={typography.bodyMuted}>
+                  {d.email} · {d.specialty ?? 'No specialty'}
+                </Text>
               </View>
+              {d.price != null ? <Text style={styles.count}>₹{d.price}</Text> : null}
             </Card>
           ))
         )

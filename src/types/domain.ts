@@ -15,12 +15,5 @@ export interface AppUser {
   birthdate?: string;
   avatarEmoji?: string;
   specialty?: string; // doctors only
-}
-
-export interface Doctor {
-  id: string;
-  name: string;
-  specialty: string;
-  price: number;
-  avatarEmoji: string;
+  price?: number; // doctors only — consult fee shown to patients
 }

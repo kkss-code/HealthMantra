@@ -4,9 +4,9 @@
 -- Authentication > Providers > Email for this demo, so sign-up logs the user
 -- in immediately (no inbox to click through).
 --
--- This schema seeds the `doctors` table but NOT `conditions` /
--- `question_steps` (that content is sizeable and generated, not literal
--- SQL). After running this file, also run:
+-- This schema does NOT seed `conditions` / `question_steps` (that content is
+-- sizeable and generated, not literal SQL). After running this file, also
+-- run:
 --   node supabase/generate-seed-content.mjs > /tmp/seed-content.sql
 -- and run the output in the SQL editor too, or the patient Home screen will
 -- have no conditions to show.
@@ -19,7 +19,8 @@ create table if not exists profiles (
   gender text,
   birthdate date,
   avatar_emoji text,
-  specialty text
+  specialty text,
+  price numeric -- doctors only: consult fee shown to patients in "Find a Doctor"
 );
 
 create table if not exists diary_entries (
@@ -61,39 +62,25 @@ create table if not exists question_steps (
   repeatable_item_label text
 );
 
--- Bookable doctor directory, owned by Admin. This is a separate listing
--- from `profiles` (role = 'doctor'), which are actual login accounts that
--- review the Diary.
-create table if not exists doctors (
-  id uuid primary key default gen_random_uuid(),
-  name text not null,
-  specialty text not null,
-  price numeric not null,
-  avatar_emoji text
-);
-
-insert into doctors (name, specialty, price, avatar_emoji) values
-  ('Dr. Ayushi Rao', 'Headache', 500, '👩‍⚕️'),
-  ('Dr. Ram Singh', 'Blood Pressure', 400, '🧑‍⚕️'),
-  ('Dr. Leo D''Souza', 'Diabetes', 450, '👨‍⚕️'),
-  ('Dr. Emma Watson', 'Dermatology', 350, '👩‍⚕️')
-on conflict do nothing;
-
 alter table profiles enable row level security;
 alter table diary_entries enable row level security;
 alter table conditions enable row level security;
 alter table question_steps enable row level security;
-alter table doctors enable row level security;
 
 create or replace function current_role_is(target_role text) returns boolean as $$
   select exists (select 1 from profiles p where p.id = auth.uid() and p.role = target_role);
 $$ language sql security definer stable;
 
 -- profiles: a user can read/update only their own row; doctors and admins
--- can read every profile (review queues + account management).
+-- can read every profile (review queues + account management); any signed-in
+-- user can read doctor-role profiles (patients browsing "Find a Doctor" —
+-- these accounts are the public-facing doctor directory).
 create policy "profiles_select_own" on profiles for select using (auth.uid() = id);
 create policy "profiles_select_staff" on profiles for select using (
   current_role_is('doctor') or current_role_is('admin')
+);
+create policy "profiles_select_doctors_public" on profiles for select using (
+  role = 'doctor' and auth.uid() is not null
 );
 create policy "profiles_insert_self" on profiles for insert with check (auth.uid() = id);
 create policy "profiles_update_own" on profiles for update using (auth.uid() = id);
@@ -112,10 +99,6 @@ create policy "conditions_select_all" on conditions for select using (auth.uid()
 create policy "conditions_write_admin" on conditions for all using (current_role_is('admin')) with check (current_role_is('admin'));
 create policy "question_steps_select_all" on question_steps for select using (auth.uid() is not null);
 create policy "question_steps_write_admin" on question_steps for all using (current_role_is('admin')) with check (current_role_is('admin'));
-
--- doctors: readable by any signed-in user; writable only by Admin.
-create policy "doctors_select_all" on doctors for select using (auth.uid() is not null);
-create policy "doctors_write_admin" on doctors for all using (current_role_is('admin')) with check (current_role_is('admin'));
 
 -- Storage: create two public buckets from the dashboard (Storage > New bucket):
 --   photos      (public)  -- condition photos attached during intake

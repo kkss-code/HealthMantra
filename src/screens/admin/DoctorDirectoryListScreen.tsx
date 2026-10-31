@@ -22,10 +22,10 @@ export function DoctorDirectoryListScreen() {
       <Text style={typography.h1}>Doctor Directory</Text>
       <Text style={typography.bodyMuted}>The bookable doctor list patients see from a report.</Text>
 
-      <PillButton label="+ Add Doctor" onPress={() => router.push('/admin-doctor/doctor-edit')} fullWidth />
+      <PillButton label="+ Add Doctor" onPress={() => router.push('/admin/doctor-edit')} fullWidth />
 
       {doctors.map((d) => (
-        <Pressable key={d.id} onPress={() => router.push({ pathname: '/admin-doctor/doctor-edit', params: { doctorId: d.id } })}>
+        <Pressable key={d.id} onPress={() => router.push({ pathname: '/admin/doctor-edit', params: { doctorId: d.id } })}>
           <Card style={styles.row}>
             <Text style={styles.avatar}>{d.avatarEmoji}</Text>
             <View style={{ flex: 1 }}>

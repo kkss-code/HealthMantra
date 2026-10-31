@@ -53,7 +53,7 @@ export function QuestionsListScreen() {
       <TopBar title={conditionName} />
       <ScreenContainer>
         <Text style={typography.bodyMuted}>{steps.length} question{steps.length === 1 ? '' : 's'} in this intake, in order.</Text>
-        <PillButton label="+ Add Question" onPress={() => router.push({ pathname: '/admin-patient/question-edit', params: { conditionId } })} fullWidth />
+        <PillButton label="+ Add Question" onPress={() => router.push({ pathname: '/admin/question-edit', params: { conditionId } })} fullWidth />
 
         {steps.map((step, index) => (
           <Card key={step.id} style={styles.row}>
@@ -67,7 +67,7 @@ export function QuestionsListScreen() {
             </View>
             <Pressable
               style={{ flex: 1 }}
-              onPress={() => router.push({ pathname: '/admin-patient/question-edit', params: { conditionId, stepId: step.id } })}
+              onPress={() => router.push({ pathname: '/admin/question-edit', params: { conditionId, stepId: step.id } })}
             >
               <Text style={styles.question} numberOfLines={2}>{step.question}</Text>
               <Text style={styles.typeBadge}>{TYPE_LABELS[step.type] ?? step.type}</Text>

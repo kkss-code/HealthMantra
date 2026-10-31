@@ -50,11 +50,8 @@ export default function RootLayout() {
         <Stack.Protected guard={user?.role === 'doctor'}>
           <Stack.Screen name="doctor" />
         </Stack.Protected>
-        <Stack.Protected guard={user?.role === 'admin_patient'}>
-          <Stack.Screen name="admin-patient" />
-        </Stack.Protected>
-        <Stack.Protected guard={user?.role === 'admin_doctor'}>
-          <Stack.Screen name="admin-doctor" />
+        <Stack.Protected guard={user?.role === 'admin'}>
+          <Stack.Screen name="admin" />
         </Stack.Protected>
       </Stack>
     </SafeAreaProvider>

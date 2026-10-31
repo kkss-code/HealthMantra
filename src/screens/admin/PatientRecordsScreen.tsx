@@ -6,15 +6,12 @@ import { TopBar } from '../../components/TopBar';
 import { Card } from '../../components/Card';
 import { StatusPill } from '../../components/StatusPill';
 import { backend } from '../../services/backend';
-import { useAuthStore } from '../../state/authStore';
 import { useContentStore } from '../../state/contentStore';
 import { DiaryEntry } from '../../types/questionnaire';
-import { reportRoute } from '../../utils/roleHome';
 import { colors, spacing, typography } from '../../theme/theme';
 
 export function PatientRecordsScreen() {
   const { patientId, patientName } = useLocalSearchParams<{ patientId: string; patientName: string }>();
-  const role = useAuthStore((s) => s.user!.role);
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const conditions = useContentStore((s) => s.conditions);
 
@@ -30,7 +27,7 @@ export function PatientRecordsScreen() {
           <Text style={typography.bodyMuted}>No notes submitted by this patient yet.</Text>
         ) : (
           entries.map((e) => (
-            <Pressable key={e.id} onPress={() => router.push({ pathname: reportRoute(role) as any, params: { entryId: e.id } })}>
+            <Pressable key={e.id} onPress={() => router.push({ pathname: '/admin/report', params: { entryId: e.id } })}>
               <Card style={styles.row}>
                 <Text style={{ fontSize: 22 }}>{conditions.find((c) => c.id === e.conditionId)?.icon ?? '🩺'}</Text>
                 <View style={{ flex: 1 }}>

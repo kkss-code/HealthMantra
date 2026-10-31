@@ -13,8 +13,8 @@ import { ROLE_HOME_ROUTE } from '../../utils/roleHome';
 import { isWebPlatform } from '../../utils/access';
 import { colors, spacing, typography } from '../../theme/theme';
 
-// Admin roles are web-only; the native app only ever offers Patient/Doctor.
-const ROLE_OPTIONS: Role[] = isWebPlatform ? ['patient', 'doctor', 'admin_patient', 'admin_doctor'] : ['patient', 'doctor'];
+// Admin is web-only; the native app only ever offers Patient/Doctor.
+const ROLE_OPTIONS: Role[] = isWebPlatform ? ['patient', 'doctor', 'admin'] : ['patient', 'doctor'];
 
 export function RegisterScreen() {
   const params = useLocalSearchParams<{ intendedRole?: Role }>();

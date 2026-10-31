@@ -1,10 +1,9 @@
-export type Role = 'patient' | 'doctor' | 'admin_patient' | 'admin_doctor';
+export type Role = 'patient' | 'doctor' | 'admin';
 
 export const ROLE_LABELS: Record<Role, string> = {
   patient: 'Patient',
   doctor: 'Doctor',
-  admin_patient: 'Patient Admin',
-  admin_doctor: 'Doctor Admin',
+  admin: 'Admin',
 };
 
 export interface AppUser {

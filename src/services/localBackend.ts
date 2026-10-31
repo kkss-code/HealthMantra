@@ -27,8 +27,7 @@ const SEED_DOCTORS: Doctor[] = [
 ];
 
 const SEED_ADMINS: Omit<StoredAccount, 'id'>[] = [
-  { name: 'Patient Content Admin', email: 'patientadmin@healthmantra.test', password: 'admin123', role: 'admin_patient', avatarEmoji: '🗂️' },
-  { name: 'Doctor Directory Admin', email: 'doctoradmin@healthmantra.test', password: 'admin123', role: 'admin_doctor', avatarEmoji: '🗂️' },
+  { name: 'HealthMantra Admin', email: 'admin@healthmantra.test', password: 'admin123', role: 'admin', avatarEmoji: '🗂️' },
 ];
 
 async function getAccounts(): Promise<StoredAccount[]> {

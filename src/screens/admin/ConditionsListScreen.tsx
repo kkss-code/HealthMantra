@@ -26,13 +26,13 @@ export function ConditionsListScreen() {
         </View>
       </View>
 
-      <PillButton label="+ Add Condition" onPress={() => router.push('/admin-patient/condition-edit')} fullWidth />
+      <PillButton label="+ Add Condition" onPress={() => router.push('/admin/condition-edit')} fullWidth />
 
       {conditions.map((c) => (
         <Card key={c.id} style={styles.row}>
           <Pressable
             style={styles.rowMain}
-            onPress={() => router.push({ pathname: '/admin-patient/questions-list', params: { conditionId: c.id, conditionName: c.name } })}
+            onPress={() => router.push({ pathname: '/admin/questions-list', params: { conditionId: c.id, conditionName: c.name } })}
           >
             <View style={[styles.icon, { borderColor: c.color }]}>
               <Text style={{ fontSize: 22 }}>{c.icon}</Text>
@@ -42,7 +42,7 @@ export function ConditionsListScreen() {
               <Text style={typography.bodyMuted}>{c.tagline}</Text>
             </View>
           </Pressable>
-          <Pressable onPress={() => router.push({ pathname: '/admin-patient/condition-edit', params: { conditionId: c.id } })} hitSlop={8}>
+          <Pressable onPress={() => router.push({ pathname: '/admin/condition-edit', params: { conditionId: c.id } })} hitSlop={8}>
             <Text style={{ fontSize: 18 }}>✏️</Text>
           </Pressable>
         </Card>

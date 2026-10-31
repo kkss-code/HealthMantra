@@ -6,10 +6,8 @@ import { Card } from '../../components/Card';
 import { StatusPill } from '../../components/StatusPill';
 import { ChipSelect } from '../../components/ChipSelect';
 import { backend } from '../../services/backend';
-import { useAuthStore } from '../../state/authStore';
 import { AppUser } from '../../types/domain';
 import { DiaryEntry } from '../../types/questionnaire';
-import { patientRecordsRoute, reportRoute } from '../../utils/roleHome';
 import { colors, spacing, typography } from '../../theme/theme';
 
 type Section = 'patients' | 'doctors' | 'reports';
@@ -21,7 +19,6 @@ const SECTIONS: { value: Section; label: string }[] = [
 ];
 
 export function AdminDataScreen() {
-  const role = useAuthStore((s) => s.user!.role);
   const [section, setSection] = useState<Section>('patients');
   const [patients, setPatients] = useState<AppUser[]>([]);
   const [doctors, setDoctors] = useState<AppUser[]>([]);
@@ -47,7 +44,7 @@ export function AdminDataScreen() {
           <Text style={typography.bodyMuted}>No patient accounts yet.</Text>
         ) : (
           patients.map((p) => (
-            <Pressable key={p.id} onPress={() => router.push({ pathname: patientRecordsRoute(role) as any, params: { patientId: p.id, patientName: p.name } })}>
+            <Pressable key={p.id} onPress={() => router.push({ pathname: '/admin/patient-records', params: { patientId: p.id, patientName: p.name } })}>
               <Card style={styles.row}>
                 <Text style={{ fontSize: 24 }}>{p.avatarEmoji ?? '🙂'}</Text>
                 <View style={{ flex: 1 }}>
@@ -82,7 +79,7 @@ export function AdminDataScreen() {
           <Text style={typography.bodyMuted}>No reports submitted yet.</Text>
         ) : (
           entries.map((e) => (
-            <Pressable key={e.id} onPress={() => router.push({ pathname: reportRoute(role) as any, params: { entryId: e.id } })}>
+            <Pressable key={e.id} onPress={() => router.push({ pathname: '/admin/report', params: { entryId: e.id } })}>
               <Card style={styles.row}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.name}>{e.patientName}</Text>

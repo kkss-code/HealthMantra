@@ -5,17 +5,19 @@ import { colors } from '../../../theme/theme';
 
 const ICONS: Record<string, string> = {
   index: '🗂️',
+  doctors: '🩺',
   data: '📊',
   profile: '👤',
 };
 
 const TITLES: Record<string, string> = {
   index: 'Content',
+  doctors: 'Doctors',
   data: 'Data',
   profile: 'Profile',
 };
 
-export default function AdminPatientTabsLayout() {
+export default function AdminTabsLayout() {
   return (
     <Tabs
       screenOptions={({ route }) => ({
@@ -27,6 +29,7 @@ export default function AdminPatientTabsLayout() {
       })}
     >
       <Tabs.Screen name="index" />
+      <Tabs.Screen name="doctors" />
       <Tabs.Screen name="data" />
       <Tabs.Screen name="profile" />
     </Tabs>

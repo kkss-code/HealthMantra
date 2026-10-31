@@ -11,8 +11,7 @@ import { colors, spacing, typography } from '../../theme/theme';
 const ALL_ROLES: { role: Role; label: string; description: string; icon: string }[] = [
   { role: 'patient', label: 'Patient', description: 'Log a condition, get a report', icon: '🙂' },
   { role: 'doctor', label: 'Doctor', description: 'Review patient notes', icon: '🧑‍⚕️' },
-  { role: 'admin_patient', label: 'Patient Admin', description: 'Manage conditions & questions', icon: '🗂️' },
-  { role: 'admin_doctor', label: 'Doctor Admin', description: 'Manage the doctor directory', icon: '🗂️' },
+  { role: 'admin', label: 'Admin', description: 'Manage content, doctors & data', icon: '🗂️' },
 ];
 
 // Admin roles are web-only; the native app only ever offers Patient/Doctor.

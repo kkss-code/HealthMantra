@@ -15,7 +15,7 @@ create table if not exists profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   name text not null,
   email text not null,
-  role text not null check (role in ('patient', 'doctor', 'admin_patient', 'admin_doctor')),
+  role text not null check (role in ('patient', 'doctor', 'admin')),
   gender text,
   birthdate date,
   avatar_emoji text,
@@ -35,8 +35,8 @@ create table if not exists diary_entries (
   created_at timestamptz not null default now()
 );
 
--- Patient-facing content, owned by Patient Admin (admin_patient). Patients
--- and doctors only ever read these.
+-- Patient-facing content, owned by Admin. Patients and doctors only ever
+-- read these.
 create table if not exists conditions (
   id text primary key default gen_random_uuid()::text,
   name text not null,
@@ -61,9 +61,9 @@ create table if not exists question_steps (
   repeatable_item_label text
 );
 
--- Bookable doctor directory, owned by Doctor Admin (admin_doctor). This is a
--- separate listing from `profiles` (role = 'doctor'), which are actual
--- login accounts that review the Diary.
+-- Bookable doctor directory, owned by Admin. This is a separate listing
+-- from `profiles` (role = 'doctor'), which are actual login accounts that
+-- review the Diary.
 create table if not exists doctors (
   id uuid primary key default gen_random_uuid(),
   name text not null,
@@ -89,33 +89,33 @@ create or replace function current_role_is(target_role text) returns boolean as 
   select exists (select 1 from profiles p where p.id = auth.uid() and p.role = target_role);
 $$ language sql security definer stable;
 
--- profiles: a user can read/update only their own row; doctors and both
--- admin roles can read every profile (review queues + account management).
+-- profiles: a user can read/update only their own row; doctors and admins
+-- can read every profile (review queues + account management).
 create policy "profiles_select_own" on profiles for select using (auth.uid() = id);
 create policy "profiles_select_staff" on profiles for select using (
-  current_role_is('doctor') or current_role_is('admin_patient') or current_role_is('admin_doctor')
+  current_role_is('doctor') or current_role_is('admin')
 );
 create policy "profiles_insert_self" on profiles for insert with check (auth.uid() = id);
 create policy "profiles_update_own" on profiles for update using (auth.uid() = id);
 
--- diary_entries: patients manage their own; doctors and both admin roles can
+-- diary_entries: patients manage their own; doctors and admins can
 -- read/update all of them (review queue + admin data view).
 create policy "diary_select_own_or_staff" on diary_entries for select using (
-  auth.uid() = patient_id or current_role_is('doctor') or current_role_is('admin_patient') or current_role_is('admin_doctor')
+  auth.uid() = patient_id or current_role_is('doctor') or current_role_is('admin')
 );
 create policy "diary_insert_own" on diary_entries for insert with check (auth.uid() = patient_id);
 create policy "diary_update_doctor" on diary_entries for update using (current_role_is('doctor'));
 
--- conditions / question_steps: readable by any signed-in user; writable only
--- by Patient Admin.
+-- conditions / question_steps: readable by any signed-in user; writable
+-- only by Admin.
 create policy "conditions_select_all" on conditions for select using (auth.uid() is not null);
-create policy "conditions_write_admin_patient" on conditions for all using (current_role_is('admin_patient')) with check (current_role_is('admin_patient'));
+create policy "conditions_write_admin" on conditions for all using (current_role_is('admin')) with check (current_role_is('admin'));
 create policy "question_steps_select_all" on question_steps for select using (auth.uid() is not null);
-create policy "question_steps_write_admin_patient" on question_steps for all using (current_role_is('admin_patient')) with check (current_role_is('admin_patient'));
+create policy "question_steps_write_admin" on question_steps for all using (current_role_is('admin')) with check (current_role_is('admin'));
 
--- doctors: readable by any signed-in user; writable only by Doctor Admin.
+-- doctors: readable by any signed-in user; writable only by Admin.
 create policy "doctors_select_all" on doctors for select using (auth.uid() is not null);
-create policy "doctors_write_admin_doctor" on doctors for all using (current_role_is('admin_doctor')) with check (current_role_is('admin_doctor'));
+create policy "doctors_write_admin" on doctors for all using (current_role_is('admin')) with check (current_role_is('admin'));
 
 -- Storage: create two public buckets from the dashboard (Storage > New bucket):
 --   photos      (public)  -- condition photos attached during intake

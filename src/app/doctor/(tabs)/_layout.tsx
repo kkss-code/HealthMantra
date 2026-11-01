@@ -5,11 +5,13 @@ import { colors } from '../../../theme/theme';
 
 const ICONS: Record<string, string> = {
   index: '📒',
+  chat: '💬',
   profile: '👤',
 };
 
 const TITLES: Record<string, string> = {
   index: 'Diary',
+  chat: 'Chat',
   profile: 'Profile',
 };
 
@@ -25,6 +27,7 @@ export default function DoctorTabsLayout() {
       })}
     >
       <Tabs.Screen name="index" />
+      <Tabs.Screen name="chat" />
       <Tabs.Screen name="profile" />
     </Tabs>
   );

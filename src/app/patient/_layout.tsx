@@ -9,6 +9,7 @@ export default function PatientLayout() {
       <Stack.Screen name="question" />
       <Stack.Screen name="doctor-list" />
       <Stack.Screen name="report" />
+      <Stack.Screen name="chat-thread" />
     </Stack>
   );
 }

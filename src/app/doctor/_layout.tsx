@@ -7,6 +7,7 @@ export default function DoctorLayout() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="add-note" />
       <Stack.Screen name="report" />
+      <Stack.Screen name="chat-thread" />
     </Stack>
   );
 }

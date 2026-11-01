@@ -52,6 +52,19 @@ create table if not exists diary_messages (
   created_at timestamptz not null default now()
 );
 
+-- Standing chat between a doctor and a patient they're assigned to (via at
+-- least one diary entry) — separate from diary_messages above, not tied to
+-- any single condition or report, and looks like a normal messaging app.
+create table if not exists chat_messages (
+  id uuid primary key default gen_random_uuid(),
+  doctor_id uuid not null references profiles(id),
+  patient_id uuid not null references profiles(id),
+  sender_id uuid not null references profiles(id),
+  sender_role text not null check (sender_role in ('doctor', 'patient')),
+  body text not null,
+  created_at timestamptz not null default now()
+);
+
 -- Patient-facing content, owned by Admin. Patients and doctors only ever
 -- read these.
 create table if not exists conditions (
@@ -83,6 +96,7 @@ alter table diary_entries enable row level security;
 alter table conditions enable row level security;
 alter table question_steps enable row level security;
 alter table diary_messages enable row level security;
+alter table chat_messages enable row level security;
 
 create or replace function current_role_is(target_role text) returns boolean as $$
   select exists (select 1 from profiles p where p.id = auth.uid() and p.role = target_role);
@@ -132,6 +146,18 @@ create policy "messages_insert_own" on diary_messages for insert with check (
   and exists (
     select 1 from diary_entries e where e.id = entry_id and (e.patient_id = auth.uid() or e.doctor_id = auth.uid())
   )
+);
+
+-- chat_messages: visible to either party; a sender can only post as
+-- themselves, and only to a patient they actually have a diary entry with
+-- (or vice versa) — chat is restricted to assigned doctor/patient pairs.
+create policy "chat_select_own" on chat_messages for select using (
+  auth.uid() = doctor_id or auth.uid() = patient_id
+);
+create policy "chat_insert_own" on chat_messages for insert with check (
+  sender_id = auth.uid()
+  and (auth.uid() = doctor_id or auth.uid() = patient_id)
+  and exists (select 1 from diary_entries e where e.doctor_id = chat_messages.doctor_id and e.patient_id = chat_messages.patient_id)
 );
 
 -- conditions / question_steps: readable by any signed-in user; writable

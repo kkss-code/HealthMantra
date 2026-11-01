@@ -1,5 +1,6 @@
 import { AppUser, Role } from '../types/domain';
 import { DiaryEntry, DiaryMessage, DiaryStatus, DoctorNote } from '../types/questionnaire';
+import { ChatMessage, ChatThreadSummary } from '../types/chat';
 import { StoredCondition, StoredQuestionStep } from '../types/content';
 import { Backend } from '../types/backend';
 import { supabase } from './supabaseClient';
@@ -47,6 +48,18 @@ function mapMessageRow(row: any): DiaryMessage {
     senderRole: row.sender_role,
     senderId: row.sender_id,
     senderName: row.sender_name,
+    body: row.body,
+    createdAt: row.created_at,
+  };
+}
+
+function mapChatRow(row: any): ChatMessage {
+  return {
+    id: row.id,
+    doctorId: row.doctor_id,
+    patientId: row.patient_id,
+    senderId: row.sender_id,
+    senderRole: row.sender_role,
     body: row.body,
     createdAt: row.created_at,
   };
@@ -227,6 +240,97 @@ export class SupabaseBackend implements Backend {
       .single();
     if (error) throw error;
     return mapMessageRow(data);
+  }
+
+  async listChatThreadsForDoctor(doctorId: string): Promise<ChatThreadSummary[]> {
+    const client = requireClient();
+    const { data: entries, error } = await client.from('diary_entries').select('patient_id, patient_name').eq('doctor_id', doctorId);
+    if (error) throw error;
+    const patients = new Map<string, string>();
+    (entries ?? []).forEach((e: any) => patients.set(e.patient_id, e.patient_name));
+
+    const { data: messages, error: msgError } = await client
+      .from('chat_messages')
+      .select('patient_id, body, created_at')
+      .eq('doctor_id', doctorId)
+      .order('created_at', { ascending: false });
+    if (msgError) throw msgError;
+
+    const latest = new Map<string, { body: string; createdAt: string }>();
+    (messages ?? []).forEach((m: any) => {
+      if (!latest.has(m.patient_id)) latest.set(m.patient_id, { body: m.body, createdAt: m.created_at });
+    });
+
+    return Array.from(patients.entries())
+      .map(([patientId, patientName]) => ({
+        doctorId,
+        doctorName: '',
+        patientId,
+        patientName,
+        lastMessage: latest.get(patientId)?.body,
+        lastMessageAt: latest.get(patientId)?.createdAt,
+      }))
+      .sort((a, b) => (b.lastMessageAt ?? '').localeCompare(a.lastMessageAt ?? ''));
+  }
+
+  async listChatThreadsForPatient(patientId: string): Promise<ChatThreadSummary[]> {
+    const client = requireClient();
+    const { data: entries, error } = await client.from('diary_entries').select('doctor_id, doctor_name').eq('patient_id', patientId).not('doctor_id', 'is', null);
+    if (error) throw error;
+    const doctors = new Map<string, string>();
+    (entries ?? []).forEach((e: any) => doctors.set(e.doctor_id, e.doctor_name));
+
+    const { data: messages, error: msgError } = await client
+      .from('chat_messages')
+      .select('doctor_id, body, created_at')
+      .eq('patient_id', patientId)
+      .order('created_at', { ascending: false });
+    if (msgError) throw msgError;
+
+    const latest = new Map<string, { body: string; createdAt: string }>();
+    (messages ?? []).forEach((m: any) => {
+      if (!latest.has(m.doctor_id)) latest.set(m.doctor_id, { body: m.body, createdAt: m.created_at });
+    });
+
+    return Array.from(doctors.entries())
+      .map(([doctorId, doctorName]) => ({
+        doctorId,
+        doctorName,
+        patientId,
+        patientName: '',
+        lastMessage: latest.get(doctorId)?.body,
+        lastMessageAt: latest.get(doctorId)?.createdAt,
+      }))
+      .sort((a, b) => (b.lastMessageAt ?? '').localeCompare(a.lastMessageAt ?? ''));
+  }
+
+  async listChatMessages(doctorId: string, patientId: string): Promise<ChatMessage[]> {
+    const client = requireClient();
+    const { data, error } = await client
+      .from('chat_messages')
+      .select('*')
+      .eq('doctor_id', doctorId)
+      .eq('patient_id', patientId)
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map(mapChatRow);
+  }
+
+  async sendChatMessage(message: Pick<ChatMessage, 'doctorId' | 'patientId' | 'senderId' | 'senderRole' | 'body'>): Promise<ChatMessage> {
+    const client = requireClient();
+    const { data, error } = await client
+      .from('chat_messages')
+      .insert({
+        doctor_id: message.doctorId,
+        patient_id: message.patientId,
+        sender_id: message.senderId,
+        sender_role: message.senderRole,
+        body: message.body,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return mapChatRow(data);
   }
 
   async listConditions(): Promise<StoredCondition[]> {

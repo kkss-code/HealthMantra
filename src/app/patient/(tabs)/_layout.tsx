@@ -7,6 +7,7 @@ const ICONS: Record<string, string> = {
   index: '🏠',
   diary: '📔',
   services: '➕',
+  chat: '💬',
   notifications: '🔔',
   profile: '👤',
 };
@@ -15,6 +16,7 @@ const TITLES: Record<string, string> = {
   index: 'Home',
   diary: 'My Diary',
   services: 'Our Services',
+  chat: 'Chat',
   notifications: 'Notifications',
   profile: 'Profile',
 };
@@ -33,6 +35,7 @@ export default function PatientTabsLayout() {
       <Tabs.Screen name="index" />
       <Tabs.Screen name="diary" />
       <Tabs.Screen name="services" />
+      <Tabs.Screen name="chat" />
       <Tabs.Screen name="notifications" />
       <Tabs.Screen name="profile" />
     </Tabs>

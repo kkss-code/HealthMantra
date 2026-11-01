@@ -1,6 +1,7 @@
 import { AppUser, Role } from './domain';
 import { DiaryEntry, DiaryMessage, DiaryStatus, DoctorNote } from './questionnaire';
 import { StoredCondition, StoredQuestionStep } from './content';
+import { ChatMessage, ChatThreadSummary } from './chat';
 
 export interface Backend {
   readonly mode: 'local' | 'supabase';
@@ -25,6 +26,13 @@ export interface Backend {
   // side can keep replying.
   listMessages(entryId: string): Promise<DiaryMessage[]>;
   addMessage(entryId: string, message: Pick<DiaryMessage, 'senderRole' | 'senderId' | 'senderName' | 'body'>): Promise<DiaryMessage>;
+
+  // Standing chat between a doctor and a patient they're assigned to —
+  // separate from the per-report thread above, not tied to one entry.
+  listChatThreadsForDoctor(doctorId: string): Promise<ChatThreadSummary[]>;
+  listChatThreadsForPatient(patientId: string): Promise<ChatThreadSummary[]>;
+  listChatMessages(doctorId: string, patientId: string): Promise<ChatMessage[]>;
+  sendChatMessage(message: Pick<ChatMessage, 'doctorId' | 'patientId' | 'senderId' | 'senderRole' | 'body'>): Promise<ChatMessage>;
 
   // Patient-facing content: Patient Admin owns these, patients just read them.
   listConditions(): Promise<StoredCondition[]>;

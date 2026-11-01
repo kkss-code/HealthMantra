@@ -1,5 +1,6 @@
 import { AppUser, Role } from '../types/domain';
 import { DiaryEntry, DiaryMessage, DiaryStatus, DoctorNote } from '../types/questionnaire';
+import { ChatMessage, ChatThreadSummary } from '../types/chat';
 import { StoredCondition, StoredQuestionStep } from '../types/content';
 import { Backend } from '../types/backend';
 import { getItem, makeId, setItem } from './storage';
@@ -14,6 +15,7 @@ const KEYS = {
   session: 'session',
   diary: 'diary',
   diaryMessages: 'diaryMessages',
+  chatMessages: 'chatMessages',
   conditions: 'conditions',
   questionSteps: 'questionSteps',
   seeded: 'seeded',
@@ -195,6 +197,35 @@ export class LocalBackend implements Backend {
     return record;
   }
 
+  async listChatThreadsForDoctor(doctorId: string): Promise<ChatThreadSummary[]> {
+    const entries = await getItem<DiaryEntry[]>(KEYS.diary, []);
+    const patients = new Map<string, string>();
+    entries.filter((e) => e.doctorId === doctorId).forEach((e) => patients.set(e.patientId, e.patientName));
+    const messages = await getItem<ChatMessage[]>(KEYS.chatMessages, []);
+    return buildThreadSummaries(patients, 'patient', doctorId, '', messages);
+  }
+
+  async listChatThreadsForPatient(patientId: string): Promise<ChatThreadSummary[]> {
+    const entries = await getItem<DiaryEntry[]>(KEYS.diary, []);
+    const doctors = new Map<string, string>();
+    entries.filter((e) => e.patientId === patientId && e.doctorId).forEach((e) => doctors.set(e.doctorId!, e.doctorName!));
+    const messages = await getItem<ChatMessage[]>(KEYS.chatMessages, []);
+    return buildThreadSummaries(doctors, 'doctor', '', patientId, messages);
+  }
+
+  async listChatMessages(doctorId: string, patientId: string): Promise<ChatMessage[]> {
+    const all = await getItem<ChatMessage[]>(KEYS.chatMessages, []);
+    return all.filter((m) => m.doctorId === doctorId && m.patientId === patientId).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  }
+
+  async sendChatMessage(message: Pick<ChatMessage, 'doctorId' | 'patientId' | 'senderId' | 'senderRole' | 'body'>): Promise<ChatMessage> {
+    const all = await getItem<ChatMessage[]>(KEYS.chatMessages, []);
+    const record: ChatMessage = { ...message, id: makeId('chat'), createdAt: new Date().toISOString() };
+    all.push(record);
+    await setItem(KEYS.chatMessages, all);
+    return record;
+  }
+
   async listConditions(): Promise<StoredCondition[]> {
     await this.ready;
     const all = await getItem<StoredCondition[]>(KEYS.conditions, []);
@@ -256,4 +287,32 @@ export class LocalBackend implements Backend {
 function stripPassword(account: StoredAccount): AppUser {
   const { password, ...rest } = account;
   return rest;
+}
+
+function buildThreadSummaries(
+  counterparts: Map<string, string>,
+  counterpartRole: 'patient' | 'doctor',
+  fixedDoctorId: string,
+  fixedPatientId: string,
+  messages: ChatMessage[]
+): ChatThreadSummary[] {
+  const latest = new Map<string, { body: string; createdAt: string }>();
+  for (const m of messages) {
+    const key = counterpartRole === 'patient' ? m.patientId : m.doctorId;
+    const existing = latest.get(key);
+    if (!existing || m.createdAt > existing.createdAt) latest.set(key, { body: m.body, createdAt: m.createdAt });
+  }
+  const result: ChatThreadSummary[] = [];
+  counterparts.forEach((name, id) => {
+    const l = latest.get(id);
+    result.push({
+      doctorId: counterpartRole === 'patient' ? fixedDoctorId : id,
+      doctorName: counterpartRole === 'patient' ? '' : name,
+      patientId: counterpartRole === 'patient' ? id : fixedPatientId,
+      patientName: counterpartRole === 'patient' ? name : '',
+      lastMessage: l?.body,
+      lastMessageAt: l?.createdAt,
+    });
+  });
+  return result.sort((a, b) => (b.lastMessageAt ?? '').localeCompare(a.lastMessageAt ?? ''));
 }

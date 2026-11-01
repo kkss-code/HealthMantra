@@ -35,16 +35,18 @@ export function HomeScreen() {
       </View>
 
       {latest ? (
-        <Card style={styles.banner}>
-          <View style={styles.bannerRow}>
-            <Text style={styles.bannerAvatar}>{conditions.find((c) => c.id === latest.conditionId)?.icon ?? '🩺'}</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.bannerTitle}>Status of your {latest.conditionName} note</Text>
-              <Text style={typography.bodyMuted}>{new Date(latest.createdAt).toLocaleDateString()}</Text>
+        <Pressable onPress={() => router.push({ pathname: '/patient/report', params: { entryId: latest.id } })}>
+          <Card style={styles.banner}>
+            <View style={styles.bannerRow}>
+              <Text style={styles.bannerAvatar}>{conditions.find((c) => c.id === latest.conditionId)?.icon ?? '🩺'}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.bannerTitle}>Status of your {latest.conditionName} note</Text>
+                <Text style={typography.bodyMuted}>{new Date(latest.createdAt).toLocaleDateString()}</Text>
+              </View>
+              <StatusPill status={latest.status} />
             </View>
-            <StatusPill status={latest.status} />
-          </View>
-        </Card>
+          </Card>
+        </Pressable>
       ) : (
         <Card style={styles.banner}>
           <Text style={styles.bannerTitle}>Early protection for family health</Text>
@@ -85,14 +87,16 @@ export function HomeScreen() {
           <Text style={typography.bodyMuted}>No entries yet. Tap a service above to log your first note.</Text>
         ) : (
           entries.map((entry) => (
-            <Card key={entry.id} style={styles.diaryRow}>
-              <Text style={styles.diaryDate}>
-                {new Date(entry.createdAt).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })}
-              </Text>
-              <Text style={{ fontSize: 20 }}>{conditions.find((c) => c.id === entry.conditionId)?.icon ?? '🩺'}</Text>
-              <Text style={styles.diaryLabel}>{entry.conditionName}</Text>
-              <StatusPill status={entry.status} />
-            </Card>
+            <Pressable key={entry.id} onPress={() => router.push({ pathname: '/patient/report', params: { entryId: entry.id } })}>
+              <Card style={styles.diaryRow}>
+                <Text style={styles.diaryDate}>
+                  {new Date(entry.createdAt).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })}
+                </Text>
+                <Text style={{ fontSize: 20 }}>{conditions.find((c) => c.id === entry.conditionId)?.icon ?? '🩺'}</Text>
+                <Text style={styles.diaryLabel}>{entry.conditionName}</Text>
+                <StatusPill status={entry.status} />
+              </Card>
+            </Pressable>
           ))
         )}
       </View>

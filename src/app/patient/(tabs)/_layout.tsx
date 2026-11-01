@@ -5,6 +5,7 @@ import { colors } from '../../../theme/theme';
 
 const ICONS: Record<string, string> = {
   index: '🏠',
+  diary: '📔',
   services: '➕',
   notifications: '🔔',
   profile: '👤',
@@ -12,7 +13,8 @@ const ICONS: Record<string, string> = {
 
 const TITLES: Record<string, string> = {
   index: 'Home',
-  services: 'Add note',
+  diary: 'My Diary',
+  services: 'Our Services',
   notifications: 'Notifications',
   profile: 'Profile',
 };
@@ -29,6 +31,7 @@ export default function PatientTabsLayout() {
       })}
     >
       <Tabs.Screen name="index" />
+      <Tabs.Screen name="diary" />
       <Tabs.Screen name="services" />
       <Tabs.Screen name="notifications" />
       <Tabs.Screen name="profile" />

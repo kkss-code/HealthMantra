@@ -57,7 +57,7 @@ export function HomeScreen() {
       <TextField placeholder="Search" value={search} onChangeText={setSearch} />
 
       <View style={styles.sectionHeader}>
-        <Text style={typography.h2}>Our Service</Text>
+        <Text style={typography.h2}>Our Services</Text>
         <Pressable onPress={() => router.push('/patient/services')}>
           <Text style={styles.link}>See all</Text>
         </Pressable>
@@ -80,26 +80,6 @@ export function HomeScreen() {
           </Pressable>
         )}
       />
-
-      <Text style={[typography.h2, { marginTop: spacing.sm }]}>My Diary</Text>
-      <View style={{ gap: spacing.sm }}>
-        {entries.length === 0 ? (
-          <Text style={typography.bodyMuted}>No entries yet. Tap a service above to log your first note.</Text>
-        ) : (
-          entries.map((entry) => (
-            <Pressable key={entry.id} onPress={() => router.push({ pathname: '/patient/report', params: { entryId: entry.id } })}>
-              <Card style={styles.diaryRow}>
-                <Text style={styles.diaryDate}>
-                  {new Date(entry.createdAt).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })}
-                </Text>
-                <Text style={{ fontSize: 20 }}>{conditions.find((c) => c.id === entry.conditionId)?.icon ?? '🩺'}</Text>
-                <Text style={styles.diaryLabel}>{entry.conditionName}</Text>
-                <StatusPill status={entry.status} />
-              </Card>
-            </Pressable>
-          ))
-        )}
-      </View>
     </ScreenContainer>
   );
 }
@@ -122,7 +102,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   serviceLabel: { fontSize: 12, color: colors.textMuted, textAlign: 'center' },
-  diaryRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  diaryDate: { fontSize: 12, fontWeight: '700', color: colors.primary, width: 44 },
-  diaryLabel: { flex: 1, fontWeight: '600', color: colors.text },
 });

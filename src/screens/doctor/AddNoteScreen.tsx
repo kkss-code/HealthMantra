@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ScreenContainer } from '../../components/ScreenContainer';
 import { TopBar } from '../../components/TopBar';
@@ -9,7 +9,7 @@ import { SignaturePadModal } from '../../components/SignaturePadModal';
 import { backend } from '../../services/backend';
 import { useAuthStore } from '../../state/authStore';
 import { makeId } from '../../services/storage';
-import { typography } from '../../theme/theme';
+import { colors, typography } from '../../theme/theme';
 
 export function AddNoteScreen() {
   const { entryId } = useLocalSearchParams<{ entryId: string }>();
@@ -18,10 +18,12 @@ export function AddNoteScreen() {
   const [signatureUri, setSignatureUri] = useState<string | null>(null);
   const [showSignaturePad, setShowSignaturePad] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit() {
     if (!user) return;
     setSubmitting(true);
+    setError(null);
     try {
       let signature: string | undefined;
       if (signatureUri) {
@@ -34,6 +36,8 @@ export function AddNoteScreen() {
         createdAt: new Date().toISOString(),
       });
       router.back();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not submit this note. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -56,6 +60,7 @@ export function AddNoteScreen() {
           />
         </View>
 
+        {error ? <Text style={styles.error}>{error}</Text> : null}
         <PillButton label="Submit" onPress={handleSubmit} loading={submitting} fullWidth disabled={!note} />
       </ScreenContainer>
 
@@ -63,3 +68,7 @@ export function AddNoteScreen() {
     </ScreenContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  error: { color: colors.danger },
+});

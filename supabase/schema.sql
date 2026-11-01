@@ -114,3 +114,11 @@ create policy "question_steps_write_admin" on question_steps for all using (curr
 --   signatures  (public)  -- doctor signature images
 -- Public buckets are simplest for this demo; tighten with signed URLs + RLS
 -- storage policies before shipping to real patients.
+--
+-- IMPORTANT: a bucket's "public" flag only controls anonymous reads. RLS is
+-- still enabled by default on storage.objects, and with zero policies every
+-- upload is rejected ("new row violates row-level security policy") even
+-- for signed-in users. Run this too, or uploadAsset() will always fail:
+create policy "objects_insert_authenticated" on storage.objects for insert to authenticated with check (bucket_id in ('photos', 'signatures'));
+create policy "objects_update_authenticated" on storage.objects for update to authenticated using (bucket_id in ('photos', 'signatures')) with check (bucket_id in ('photos', 'signatures'));
+create policy "objects_select_public" on storage.objects for select using (bucket_id in ('photos', 'signatures'));

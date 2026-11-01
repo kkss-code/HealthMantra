@@ -15,6 +15,7 @@ import { useIntakeStore } from '../../state/intakeStore';
 import { useAuthStore } from '../../state/authStore';
 import { backend } from '../../services/backend';
 import { computeFindings } from '../../data/findings';
+import { isWebPlatform } from '../../utils/access';
 import { colors, radius, spacing, typography } from '../../theme/theme';
 
 export function QuestionScreen() {
@@ -118,21 +119,33 @@ export function QuestionScreen() {
         {step.type === 'yesno' ? <YesNo value={value as string} onChange={(v) => setAnswer(step.id, v)} /> : null}
 
         {step.type === 'date' ? (
-          <View>
-            <Pressable style={styles.dateBtn} onPress={() => setShowDatePicker(true)}>
-              <Text style={{ color: value ? colors.text : colors.textFaint }}>{(value as string) || 'Select a date'}</Text>
-            </Pressable>
-            {showDatePicker ? (
-              <DateTimePicker
-                value={value ? new Date(value as string) : new Date()}
-                mode="date"
-                onChange={(_, date) => {
-                  setShowDatePicker(false);
-                  if (date) setAnswer(step.id, date.toISOString().slice(0, 10));
-                }}
-              />
-            ) : null}
-          </View>
+          isWebPlatform ? (
+            // @react-native-community/datetimepicker has no web implementation
+            // (it renders null and only logs a warning there), so web gets a
+            // plain typed field instead, same convention as the birthdate
+            // field on ProfileScreen.
+            <TextField
+              value={(value as string) ?? ''}
+              onChangeText={(t) => setAnswer(step.id, t)}
+              placeholder="YYYY-MM-DD"
+            />
+          ) : (
+            <View>
+              <Pressable style={styles.dateBtn} onPress={() => setShowDatePicker(true)}>
+                <Text style={{ color: value ? colors.text : colors.textFaint }}>{(value as string) || 'Select a date'}</Text>
+              </Pressable>
+              {showDatePicker ? (
+                <DateTimePicker
+                  value={value ? new Date(value as string) : new Date()}
+                  mode="date"
+                  onChange={(_, date) => {
+                    setShowDatePicker(false);
+                    if (date) setAnswer(step.id, date.toISOString().slice(0, 10));
+                  }}
+                />
+              ) : null}
+            </View>
+          )
         ) : null}
 
         {step.type === 'photo' ? (

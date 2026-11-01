@@ -1,5 +1,5 @@
 import { AppUser, Role } from '../types/domain';
-import { DiaryEntry, DiaryStatus, DoctorNote } from '../types/questionnaire';
+import { DiaryEntry, DiaryMessage, DiaryStatus, DoctorNote } from '../types/questionnaire';
 import { StoredCondition, StoredQuestionStep } from '../types/content';
 import { Backend } from '../types/backend';
 import { supabase } from './supabaseClient';
@@ -37,6 +37,18 @@ function mapDiaryRow(row: any): DiaryEntry {
     doctorNote: row.doctor_note ?? undefined,
     doctorId: row.doctor_id ?? undefined,
     doctorName: row.doctor_name ?? undefined,
+  };
+}
+
+function mapMessageRow(row: any): DiaryMessage {
+  return {
+    id: row.id,
+    entryId: row.entry_id,
+    senderRole: row.sender_role,
+    senderId: row.sender_id,
+    senderName: row.sender_name,
+    body: row.body,
+    createdAt: row.created_at,
   };
 }
 
@@ -191,6 +203,30 @@ export class SupabaseBackend implements Backend {
     const client = requireClient();
     const { error } = await client.from('diary_entries').update({ doctor_note: note, status: 'accepted' }).eq('id', entryId);
     if (error) throw error;
+  }
+
+  async listMessages(entryId: string): Promise<DiaryMessage[]> {
+    const client = requireClient();
+    const { data, error } = await client.from('diary_messages').select('*').eq('entry_id', entryId).order('created_at', { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map(mapMessageRow);
+  }
+
+  async addMessage(entryId: string, message: Pick<DiaryMessage, 'senderRole' | 'senderId' | 'senderName' | 'body'>): Promise<DiaryMessage> {
+    const client = requireClient();
+    const { data, error } = await client
+      .from('diary_messages')
+      .insert({
+        entry_id: entryId,
+        sender_role: message.senderRole,
+        sender_id: message.senderId,
+        sender_name: message.senderName,
+        body: message.body,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return mapMessageRow(data);
   }
 
   async listConditions(): Promise<StoredCondition[]> {

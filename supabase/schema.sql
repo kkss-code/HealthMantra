@@ -38,6 +38,20 @@ create table if not exists diary_entries (
   created_at timestamptz not null default now()
 );
 
+-- Follow-up conversation on an entry, after the doctor's first (signed)
+-- DoctorNote stored on diary_entries.doctor_note. Either side can keep
+-- replying from here — patient asks a follow-up, doctor replies, repeat —
+-- without re-running the whole intake or re-signing each time.
+create table if not exists diary_messages (
+  id uuid primary key default gen_random_uuid(),
+  entry_id uuid not null references diary_entries(id) on delete cascade,
+  sender_role text not null check (sender_role in ('patient', 'doctor')),
+  sender_id uuid not null references profiles(id),
+  sender_name text not null,
+  body text not null,
+  created_at timestamptz not null default now()
+);
+
 -- Patient-facing content, owned by Admin. Patients and doctors only ever
 -- read these.
 create table if not exists conditions (
@@ -68,6 +82,7 @@ alter table profiles enable row level security;
 alter table diary_entries enable row level security;
 alter table conditions enable row level security;
 alter table question_steps enable row level security;
+alter table diary_messages enable row level security;
 
 create or replace function current_role_is(target_role text) returns boolean as $$
   select exists (select 1 from profiles p where p.id = auth.uid() and p.role = target_role);
@@ -100,6 +115,23 @@ create policy "diary_insert_own" on diary_entries for insert with check (auth.ui
 create policy "diary_update_own" on diary_entries for update using (auth.uid() = patient_id) with check (auth.uid() = patient_id);
 create policy "diary_update_doctor" on diary_entries for update using (
   current_role_is('doctor') and doctor_id = auth.uid()
+);
+
+-- diary_messages: visible to the entry's patient, its assigned doctor, or
+-- admin; a sender can only post as themselves, and only if they're that
+-- entry's patient or its assigned doctor.
+create policy "messages_select_patient" on diary_messages for select using (
+  exists (select 1 from diary_entries e where e.id = entry_id and e.patient_id = auth.uid())
+);
+create policy "messages_select_doctor" on diary_messages for select using (
+  exists (select 1 from diary_entries e where e.id = entry_id and e.doctor_id = auth.uid())
+);
+create policy "messages_select_admin" on diary_messages for select using (current_role_is('admin'));
+create policy "messages_insert_own" on diary_messages for insert with check (
+  sender_id = auth.uid()
+  and exists (
+    select 1 from diary_entries e where e.id = entry_id and (e.patient_id = auth.uid() or e.doctor_id = auth.uid())
+  )
 );
 
 -- conditions / question_steps: readable by any signed-in user; writable

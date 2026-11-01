@@ -1,5 +1,5 @@
 import { AppUser, Role } from '../types/domain';
-import { DiaryEntry, DiaryStatus, DoctorNote } from '../types/questionnaire';
+import { DiaryEntry, DiaryMessage, DiaryStatus, DoctorNote } from '../types/questionnaire';
 import { StoredCondition, StoredQuestionStep } from '../types/content';
 import { Backend } from '../types/backend';
 import { getItem, makeId, setItem } from './storage';
@@ -13,6 +13,7 @@ const KEYS = {
   accounts: 'accounts',
   session: 'session',
   diary: 'diary',
+  diaryMessages: 'diaryMessages',
   conditions: 'conditions',
   questionSteps: 'questionSteps',
   seeded: 'seeded',
@@ -179,6 +180,19 @@ export class LocalBackend implements Backend {
     if (idx === -1) return;
     all[idx] = { ...all[idx], doctorNote: note, status: 'accepted' };
     await setItem(KEYS.diary, all);
+  }
+
+  async listMessages(entryId: string): Promise<DiaryMessage[]> {
+    const all = await getItem<DiaryMessage[]>(KEYS.diaryMessages, []);
+    return all.filter((m) => m.entryId === entryId).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  }
+
+  async addMessage(entryId: string, message: Pick<DiaryMessage, 'senderRole' | 'senderId' | 'senderName' | 'body'>): Promise<DiaryMessage> {
+    const all = await getItem<DiaryMessage[]>(KEYS.diaryMessages, []);
+    const record: DiaryMessage = { ...message, id: makeId('msg'), entryId, createdAt: new Date().toISOString() };
+    all.push(record);
+    await setItem(KEYS.diaryMessages, all);
+    return record;
   }
 
   async listConditions(): Promise<StoredCondition[]> {

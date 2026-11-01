@@ -74,3 +74,16 @@ export interface DiaryEntry {
   doctorId?: string; // set once the patient picks a doctor from "Find a Doctor"
   doctorName?: string;
 }
+
+// Follow-up conversation on an entry, after the doctor's first (signed)
+// DoctorNote. Either side can keep replying — patient asks a follow-up,
+// doctor replies, and so on — without re-running the whole intake.
+export interface DiaryMessage {
+  id: string;
+  entryId: string;
+  senderRole: 'patient' | 'doctor';
+  senderId: string;
+  senderName: string;
+  body: string;
+  createdAt: string;
+}

@@ -8,11 +8,12 @@ import { TopBar } from '../../components/TopBar';
 import { Card } from '../../components/Card';
 import { PillButton } from '../../components/PillButton';
 import { StatusPill } from '../../components/StatusPill';
+import { TextField } from '../../components/TextField';
 import { backend } from '../../services/backend';
 import { useContentStore } from '../../state/contentStore';
 import { useAuthStore } from '../../state/authStore';
 import { assembleSchema } from '../../types/content';
-import { DiaryEntry, RepeatableValue } from '../../types/questionnaire';
+import { DiaryEntry, DiaryMessage, RepeatableValue } from '../../types/questionnaire';
 import { buildReportHtml } from '../../utils/reportHtml';
 import { colors, spacing, typography } from '../../theme/theme';
 
@@ -22,11 +23,15 @@ export function ReportScreen() {
   const [entry, setEntry] = useState<DiaryEntry | null>(null);
   const [loading, setLoading] = useState(true);
   const [sharing, setSharing] = useState(false);
+  const [messages, setMessages] = useState<DiaryMessage[]>([]);
+  const [replyText, setReplyText] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
 
   const load = useCallback(() => {
     backend.getDiaryEntry(entryId).then((e) => {
       setEntry(e);
       setLoading(false);
+      if (e) backend.listMessages(e.id).then(setMessages);
     });
   }, [entryId]);
 
@@ -68,6 +73,28 @@ export function ReportScreen() {
       setSharing(false);
     }
   }
+
+  async function handleSendReply() {
+    if (!user || !replyText.trim()) return;
+    setSendingReply(true);
+    try {
+      await backend.addMessage(entry!.id, {
+        senderRole: user.role as 'patient' | 'doctor',
+        senderId: user.id,
+        senderName: user.name,
+        body: replyText.trim(),
+      });
+      setReplyText('');
+      const msgs = await backend.listMessages(entry!.id);
+      setMessages(msgs);
+    } finally {
+      setSendingReply(false);
+    }
+  }
+
+  const canReply =
+    !!entry.doctorNote &&
+    ((user?.role === 'patient' && user.id === entry.patientId) || (user?.role === 'doctor' && user.id === entry.doctorId));
 
   const simpleSteps = schema?.steps.filter((s) => s.type !== 'repeatable' && s.type !== 'photo' && entry.answers[s.id]) ?? [];
   const repeatableSteps = schema?.steps.filter((s) => s.type === 'repeatable' && (entry.answers[s.id] as RepeatableValue)?.length) ?? [];
@@ -143,6 +170,33 @@ export function ReportScreen() {
             <Text style={typography.bodyMuted}>Awaiting doctor review.</Text>
           )}
         </Card>
+
+        {entry.doctorNote ? (
+          <Card>
+            <Text style={styles.sectionLabel}>Conversation</Text>
+            {messages.length === 0 ? (
+              <Text style={typography.bodyMuted}>No follow-up messages yet.</Text>
+            ) : (
+              <View style={{ gap: spacing.md }}>
+                {messages.map((m) => (
+                  <View key={m.id}>
+                    <Text style={styles.messageSender}>
+                      {m.senderName} <Text style={typography.bodyMuted}>· {new Date(m.createdAt).toLocaleString()}</Text>
+                    </Text>
+                    <Text style={typography.body}>{m.body}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {canReply ? (
+              <View style={styles.replyBox}>
+                <TextField value={replyText} onChangeText={setReplyText} placeholder="Write a reply…" multiline />
+                <PillButton label="Send" onPress={handleSendReply} loading={sendingReply} disabled={!replyText.trim()} fullWidth />
+              </View>
+            ) : null}
+          </Card>
+        ) : null}
       </ScreenContainer>
 
       <View style={styles.footer}>
@@ -175,5 +229,7 @@ const styles = StyleSheet.create({
   repeatRow: { paddingVertical: 6, borderTopWidth: 1, borderTopColor: colors.border },
   photo: { width: 160, height: 160, borderRadius: 12, marginTop: spacing.sm },
   signature: { width: 160, height: 80, marginTop: spacing.sm, resizeMode: 'contain' },
+  messageSender: { fontWeight: '700', color: colors.text, marginBottom: 2 },
+  replyBox: { gap: spacing.sm, marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border },
   footer: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm, padding: spacing.md },
 });

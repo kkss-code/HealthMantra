@@ -1,5 +1,5 @@
 import { AppUser, Role } from './domain';
-import { DiaryEntry, DiaryStatus, DoctorNote } from './questionnaire';
+import { DiaryEntry, DiaryMessage, DiaryStatus, DoctorNote } from './questionnaire';
 import { StoredCondition, StoredQuestionStep } from './content';
 
 export interface Backend {
@@ -20,6 +20,11 @@ export interface Backend {
   updateDiaryEntryStatus(entryId: string, status: DiaryStatus): Promise<void>;
   assignDoctor(entryId: string, doctorId: string, doctorName: string): Promise<void>;
   addDoctorNote(entryId: string, note: DoctorNote): Promise<void>;
+
+  // Follow-up conversation after the first (signed) doctor note — either
+  // side can keep replying.
+  listMessages(entryId: string): Promise<DiaryMessage[]>;
+  addMessage(entryId: string, message: Pick<DiaryMessage, 'senderRole' | 'senderId' | 'senderName' | 'body'>): Promise<DiaryMessage>;
 
   // Patient-facing content: Patient Admin owns these, patients just read them.
   listConditions(): Promise<StoredCondition[]>;

@@ -10,11 +10,10 @@ import { RadioList } from '../../components/RadioList';
 import { useAuthStore } from '../../state/authStore';
 import { ROLE_LABELS, Role } from '../../types/domain';
 import { ROLE_HOME_ROUTE } from '../../utils/roleHome';
-import { isWebPlatform } from '../../utils/access';
 import { colors, spacing, typography } from '../../theme/theme';
 
-// Admin is web-only; the native app only ever offers Patient/Doctor.
-const ROLE_OPTIONS: Role[] = isWebPlatform ? ['patient', 'doctor', 'admin'] : ['patient', 'doctor'];
+// Admin accounts are created directly in Supabase, never through self-signup.
+const ROLE_OPTIONS: Role[] = ['patient', 'doctor'];
 
 export function RegisterScreen() {
   const params = useLocalSearchParams<{ intendedRole?: Role }>();
